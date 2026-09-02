@@ -1,0 +1,87 @@
+# ============================================================================
+# .gitignore - Voice Control System
+# ============================================================================
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Local models and cache (IMPORTANT: Exclude large model files from git)
+# These files exceed GitHub's 100MB limit and should be downloaded separately
+local_models/
+hf_cache/
+*.bin
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.safetensors
+*.model
+
+# Hugging Face cache
+.cache/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Output and log files
+output.txt
+*.log
+*.txt.tmp
+voice_control_log_*.txt
+
+# Configuration files (may contain user-specific settings)
+tts_config.json
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# PyInstaller build files
+build/
+dist/
+*.spec
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Audio recordings (if any)
+*.wav
+*.mp3
+*.flac
+recordings/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local

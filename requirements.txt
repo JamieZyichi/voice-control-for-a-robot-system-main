@@ -1,0 +1,191 @@
+# ============================================================================
+# Intelligent Offline Voice Control Transcription System - Dependencies
+# ============================================================================
+# Version: 2.3.0
+# Platform: Windows 10/11 (64-bit)
+# Python: 3.8+ required
+# ============================================================================
+# Installation:
+#   pip install -r requirements.txt
+#
+# CRITICAL POST-INSTALL:
+#   python Scripts\pywin32_postinstall.py -install
+#   (Run as Administrator if COM initialization fails)
+# ============================================================================
+
+# ============================================================================
+# CORE DEPENDENCIES - Required for all functionality
+# ============================================================================
+
+# Speech Recognition Stack
+faster-whisper>=0.10.0,<1.0.0    # OpenAI Whisper STT with CTranslate2 optimization
+                                  # REQUIRED: Primary speech recognition engine
+                                  # Includes: model loading, transcription, VAD support
+
+ctranslate2>=3.16.0,<4.0.0        # High-performance inference engine for Whisper
+                                  # REQUIRED: Backend for faster-whisper
+                                  # Provides: int8 quantization, CPU optimization
+
+tokenizers>=0.13.0,<1.0.0         # HuggingFace tokenizers for text processing
+                                  # REQUIRED: Tokenization for Whisper models
+                                  # Used by: faster-whisper for input preprocessing
+
+onnxruntime>=1.15.0,<2.0.0        # ONNX model runtime for VAD
+                                  # REQUIRED: Executes Silero VAD v6 model
+                                  # Critical for: Voice activity detection filtering
+                                  # Note: Use onnxruntime-gpu for CUDA acceleration
+
+# Audio Processing
+numpy>=1.21.0,<2.0.0              # Numerical computing foundation
+                                  # REQUIRED: Audio data manipulation, RMS calculation
+                                  # Used by: all audio processing pipelines
+
+pyaudio>=0.2.11,<1.0.0            # Cross-platform audio I/O
+                                  # REQUIRED: Microphone capture, device enumeration
+                                  # Backend: PortAudio (bundled DLLs in build)
+                                  # Note: Requires Microsoft Visual C++ Redistributable
+
+# Windows Text-to-Speech
+pywin32>=305,<400                 # Windows COM/SAPI bindings
+                                  # REQUIRED: TTS voice synthesis via SAPI5
+                                  # Components: win32com, pywintypes, win32api
+                                  # POST-INSTALL: python Scripts\pywin32_postinstall.py -install
+
+# ============================================================================
+# GUI & APPLICATION FRAMEWORK
+# ============================================================================
+
+# tkinter - Bundled with Python (no installation needed)
+#           REQUIRED: Main application GUI
+#           Provides: Tk, ttk, threading integration
+
+# ============================================================================
+# DEVELOPMENT & BUILD TOOLS
+# ============================================================================
+
+PyInstaller>=5.0.0,<7.0.0         # Application packaging to standalone EXE
+                                  # REQUIRED FOR BUILD: Bundles Python + dependencies
+                                  # Features: Single-file EXE, runtime hooks, data files
+
+# ============================================================================
+# UTILITY DEPENDENCIES
+# ============================================================================
+
+requests>=2.25.0,<3.0.0           # HTTP library for model downloads
+                                  # OPTIONAL: Only needed for first-run model download
+                                  # Used when: local_models/ directory doesn't exist
+
+huggingface-hub>=0.16.0,<1.0.0    # HuggingFace model repository client
+                                  # OPTIONAL: Automatic model downloading
+                                  # Downloads to: %APPDATA%\voice_control_cache
+
+# ============================================================================
+# OPTIONAL ENHANCEMENTS
+# ============================================================================
+
+# Advanced Audio Processing
+# soundfile>=0.10.0,<1.0.0        # Audio file I/O (WAV, FLAC, OGG)
+#                                 # Use case: Batch processing audio files
+#                                 # Requires: libsndfile system library
+
+# GPU Acceleration (CUDA)
+# onnxruntime-gpu>=1.15.0         # Replace onnxruntime for GPU VAD
+#                                 # Requires: CUDA Toolkit 11.x, cuDNN 8.x
+#                                 # Performance: 2-3x faster VAD filtering
+
+# torch>=2.0.0,<3.0.0             # PyTorch for custom model fine-tuning
+# torchaudio>=2.0.0,<3.0.0        # Audio utilities for torch
+#                                 # Use case: Training custom acoustic models
+#                                 # Warning: Adds ~1GB to build size
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+
+# Windows 10/11:
+#   - Microsoft Visual C++ 2015-2022 Redistributable (x64)
+#     Download: https://aka.ms/vs/17/release/vc_redist.x64.exe
+#   - Windows 10 SDK (for pywin32 COM support)
+#   - Microphone with Windows-compatible drivers
+
+# Python Environment:
+#   - Python 3.8, 3.9, 3.10, or 3.11 (64-bit)
+#   - pip >= 21.0 (upgrade: python -m pip install --upgrade pip)
+#   - setuptools >= 60.0
+#   - wheel >= 0.37.0
+
+# Disk Space:
+#   - Development environment: ~2GB
+#     (Python + packages + models + build artifacts)
+#   - Packaged executable: 250-300MB
+#     (Depends on model size and included assets)
+
+# ============================================================================
+# INSTALLATION VERIFICATION
+# ============================================================================
+
+# After installation, verify critical components:
+#
+# 1. Python version:
+#    python --version
+#
+# 2. Package versions:
+#    pip list | findstr "faster-whisper ctranslate2 pywin32 onnxruntime"
+#
+# 3. PyWin32 COM registration:
+#    python -c "import win32com.client; win32com.client.Dispatch('SAPI.SpVoice')"
+#
+# 4. Audio device access:
+#    python -c "import pyaudio; p=pyaudio.PyAudio(); print(f'Devices: {p.get_device_count()}'); p.terminate()"
+#
+# 5. ONNX Runtime:
+#    python -c "import onnxruntime as ort; print(f'ONNX: {ort.__version__}')"
+#
+# 6. Build tools:
+#    pyinstaller --version
+
+# ============================================================================
+# TROUBLESHOOTING
+# ============================================================================
+
+# Issue: "Microsoft Visual C++ 14.0 is required"
+# Solution: Install VC++ Redistributable from link above
+
+# Issue: "ImportError: DLL load failed while importing win32api"
+# Solution: Run pywin32 post-install as Administrator:
+#           python Scripts\pywin32_postinstall.py -install
+
+# Issue: "OSError: PortAudio library not found"
+# Solution: Reinstall PyAudio:
+#           pip uninstall pyaudio
+#           pip install pyaudio --upgrade
+
+# Issue: "ModuleNotFoundError: No module named 'onnxruntime'"
+# Solution: Install explicitly:
+#           pip install onnxruntime>=1.15.0
+
+# Issue: "faster-whisper model download timeout"
+# Solution: Pre-download models to local_models/:
+#           huggingface-cli download Systran/faster-whisper-base --local-dir local_models/
+
+# ============================================================================
+# DEPENDENCY GRAPH
+# ============================================================================
+#
+# VoiceControlApp (main_voice_app.py)
+#   ├─> AudioEngine (audio_engine_v2.py)
+#   │    ├─> ModelManager (model_manager.py)
+#   │    │    ├─> faster-whisper (STT transcription)
+#   │    │    │    └─> ctranslate2 (inference backend)
+#   │    │    └─> onnxruntime (VAD model execution)
+#   │    ├─> CommandManager (command_manager.py)
+#   │    │    └─> difflib (fuzzy matching - stdlib)
+#   │    └─> pyaudio (microphone capture)
+#   │         └─> numpy (audio data arrays)
+#   ├─> TTSEngine (tts_engine_v2.py)
+#   │    └─> pywin32 (Windows SAPI COM)
+#   └─> tkinter (GUI framework - stdlib)
+
+# ============================================================================
+# END OF REQUIREMENTS
+# ============================================================================
