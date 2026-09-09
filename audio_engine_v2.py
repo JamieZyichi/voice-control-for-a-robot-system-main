@@ -21,6 +21,7 @@ import numpy as np
 import pyaudio
 from typing import Optional, List, Dict, Any
 import traceback
+from opencc import OpenCC
 from pathlib import Path
 
 # Import optimized modules (will use v2 versions when available)
@@ -82,13 +83,17 @@ class AudioEngine:
     WAKE_STATE_INACTIVE = 0
     WAKE_STATE_ACTIVE = 1
     
-    def __init__(self, model_size="base", language="en", device="cpu"):
+    def __init__(self, model_size="base", language=None, device="cpu"):
+        '''language 改成 none，wisper模型会自动识别中英文'''
         print("[AudioEngine] Initializing...")
         
         # Configuration
         self.model_size = model_size
         self.language = language
         self.device = device
+
+        # 将 Whisper 输出的繁体中文统一转换为简体中文
+        self.chinese_converter = OpenCC("t2s")
         
         # State management (thread-safe with RLock for reentrant locking)
         self._state_lock = threading.RLock()
@@ -364,12 +369,15 @@ class AudioEngine:
         
         try:
             # Get hotword boost
-            boost_phrases = [wake_word]
-            if self.cmd_hotword_mgr:
-                boost_phrases.extend(self.cmd_hotword_mgr.get_boost_phrases(3))
+            boost_phrases = [wake_word,"Susie","Suzy"]
             
             # Transcribe with optimized settings
-            text = self._transcribe_optimized(audio_data, boost_phrases, fast_mode=True)
+            text = self._transcribe_optimized(
+                audio_data,
+                boost_phrases,
+                fast_mode=True,
+                language_override="en"
+            )
             
             if text:
                 text = text.strip().lower()
@@ -411,24 +419,29 @@ class AudioEngine:
         try:
             # Get hotword boost phrases
             boost_phrases = []
-            if self.cmd_hotword_mgr:
-                boost_phrases = self.cmd_hotword_mgr.get_boost_phrases(10)
+
             
             # Transcribe with optimization
             text = self._transcribe_optimized(audio_data, boost_phrases, fast_mode=False)
             
             if text:
                 text = text.strip()
+                # 把 Whisper 输出的繁体中文统一转换成简体中文
+                original_text = text
+                text = self.chinese_converter.convert(text)
+
+                if original_text != text:
+                    print(
+                        f"[AudioEngine] Traditional Chinese converted: "
+                        f"'{original_text}' -> '{text}'"
+                    )
+                    _stt_log(
+                        f"Traditional Chinese converted: "
+                        f"'{original_text}' -> '{text}'"
+                    )
+
                 # Apply deduplication to prevent repetitive text
                 text = self._deduplicate_text(text)
-                
-                # FIX #5: Filter phrases longer than 4 words (allows "open robot cell", "open camera 1")
-                text = self._filter_by_word_count(text, max_words=4)
-                if not text:
-                    print(f"[AudioEngine] Transcription rejected (>4 words)")
-                    _stt_log(f"Transcription rejected: exceeds word limit")
-                    return None
-                
                 print(f"[AudioEngine] Transcription: '{text}'")
                 _stt_log(f"Transcription result: '{text}'")
                 
@@ -451,85 +464,48 @@ class AudioEngine:
             with self._state_lock:
                 self._processing = False
     
-    def _transcribe_optimized(self, audio_data: np.ndarray, boost_phrases: List[str], fast_mode: bool = False) -> Optional[str]:
+    def _transcribe_optimized(self,
+                              audio_data: np.ndarray,
+                              boost_phrases: List[str],
+                              fast_mode: bool = False,
+                              language_override=None
+                              ) -> Optional[str]:
         """
         Optimized transcription with backend-specific optimizations.
         """
         if not self.model or self._shutting_down:
             return None
-        
+
+        effective_language=(
+            language_override
+            if language_override is not None
+            else self.language
+        )
+
         try:
             initial_prompt = ", ".join(boost_phrases) if boost_phrases else None
             
             if BACKEND == "faster-whisper":
                 # Optimized parameters for performance
                 beam_size = 1 if fast_mode else 2  # Reduced for speed
-                
-                # FIX #6: Enable VAD filter with proper error handling
-                # Try to use VAD; fallback gracefully if dependencies missing
-                use_vad = True
-                vad_error_msg = None
-                try:
-                    # Test if VAD model file exists in frozen builds
-                    if getattr(sys, 'frozen', False):
-                        import os
-                        vad_model_path = os.path.join(sys._MEIPASS, 'faster_whisper', 'assets', 'silero_vad_v6.onnx')
-                        if not os.path.exists(vad_model_path):
-                            use_vad = False
-                            vad_error_msg = f"VAD model not found at {vad_model_path}"
-                            _stt_log(vad_error_msg)
-                        else:
-                            _stt_log(f"VAD model found at {vad_model_path}")
-                except Exception as e:
-                    use_vad = False
-                    vad_error_msg = f"VAD check failed: {e}"
-                    _stt_log(vad_error_msg)
+                # In packaged builds, disable VAD filter to avoid missing optional deps
+                use_vad = False if getattr(sys, 'frozen', False) else True
+                if not use_vad:
+                    _stt_log("Disabled VAD filter in packaged build")
 
-                try:
-                    segments, info = self.model.transcribe(
-                        audio_data,
-                        language=self.language,
-                        beam_size=beam_size,
-                        vad_filter=use_vad,
-                        vad_parameters={
-                            "threshold": 0.5,
-                            "min_speech_duration_ms": 250,
-                            "min_silence_duration_ms": 100,
-                            "speech_pad_ms": 30
-                        } if use_vad else None,
-                        initial_prompt=initial_prompt,
-                        temperature=0.0,  # Deterministic
-                        compression_ratio_threshold=2.4,
-                        log_prob_threshold=-1.0,
-                        no_speech_threshold=0.6,
-                        condition_on_previous_text=False,  # CRITICAL: Prevent repetition
-                        word_timestamps=False  # Faster processing
-                    )
-                except Exception as transcribe_error:
-                    # If VAD causes error, retry without VAD
-                    if use_vad and "silero" in str(transcribe_error).lower():
-                        _stt_log(f"VAD error detected, retrying without VAD: {transcribe_error}")
-                        use_vad = False
-                        segments, info = self.model.transcribe(
-                            audio_data,
-                            language=self.language,
-                            beam_size=beam_size,
-                            vad_filter=False,
-                            initial_prompt=initial_prompt,
-                            temperature=0.0,
-                            compression_ratio_threshold=2.4,
-                            log_prob_threshold=-1.0,
-                            no_speech_threshold=0.6,
-                            condition_on_previous_text=False,
-                            word_timestamps=False
-                        )
-                    else:
-                        raise
-                
-                if use_vad:
-                    _stt_log("VAD filter enabled successfully")
-                else:
-                    _stt_log("VAD filter disabled (dependencies unavailable)")
+                segments, info = self.model.transcribe(
+                    audio_data,
+                    language=effective_language,
+                    beam_size=beam_size,
+                    vad_filter=use_vad,
+                    initial_prompt=initial_prompt,
+                    temperature=0.0,  # Deterministic
+                    compression_ratio_threshold=2.4,
+                    log_prob_threshold=-1.0,
+                    no_speech_threshold=0.6,
+                    condition_on_previous_text=False,  # CRITICAL: Prevent repetition
+                    word_timestamps=False  # Faster processing
+                )
                 
                 # CRITICAL FIX: Convert generator to list ONCE
                 # Aggressively limit segments and detect repetition
@@ -562,7 +538,7 @@ class AudioEngine:
                 # OpenAI Whisper parameters
                 result = self.model.transcribe(
                     audio_data,
-                    language=self.language,
+                    language=effective_language,
                     fp16=False,
                     initial_prompt=initial_prompt
                 )
@@ -583,8 +559,7 @@ class AudioEngine:
     
     def match_command(self, text: str, commands: List[str]) -> Optional[str]:
         """
-        Match command with cooldown, deduplication, and aggregation.
-        FIX #7: Uses command aggregation when multiple instances detected.
+        Match command with cooldown and deduplication.
         """
         if not text or not commands or self._shutting_down:
             return None
@@ -598,17 +573,7 @@ class AudioEngine:
             print(f"[AudioEngine] Command cooldown active ({self._command_cooldown}s)")
             return None
         
-        # FIX #7: Try command aggregation first (for multiple command instances)
-        aggregated = self._aggregate_commands(text, commands)
-        if aggregated:
-            # Verify aggregated command is valid
-            if self.cmd_hotword_mgr:
-                self.cmd_hotword_mgr.record_usage(aggregated, success=True)
-            self._last_command_time = current_time
-            print(f"[AudioEngine] Command aggregated: '{text}' -> '{aggregated}'")
-            return aggregated
-        
-        # Fallback: Find match using standard fuzzy matching
+        # Find match using command manager
         matched_command = None
         if self.cmd_hotword_mgr:
             matched_command = self.cmd_hotword_mgr.find_best_match(text)
@@ -628,7 +593,6 @@ class AudioEngine:
         """
         Aggressively remove repetitive patterns from transcribed text.
         e.g., "open camera open camera open camera" -> "open camera"
-        IMPROVED: Detect and reject long hallucinations early
         """
         if not text:
             return text
@@ -637,14 +601,6 @@ class AudioEngine:
         words = text.split()
         if not words:
             return text
-        
-        # CRITICAL FIX: Reject extremely long transcriptions (likely hallucination)
-        # Valid commands are 1-4 words, so >15 words is definitely wrong
-        if len(words) > 15:
-            print(f"[AudioEngine] Hallucination detected ({len(words)} words), taking first phrase only")
-            _stt_log(f"Hallucination rejected: {len(words)} words")
-            # Return only first 2-3 words (likely the actual command)
-            return ' '.join(words[:3])
         
         # Detect repetition patterns
         # Check for sequences like "word1 word2 word1 word2 word1 word2"
@@ -666,7 +622,6 @@ class AudioEngine:
             # If pattern repeats 3+ times, it's a hallucination - return just the pattern
             if repeat_count >= 3:
                 print(f"[AudioEngine] Detected repetition pattern (x{repeat_count}): '{pattern_str}'")
-                _stt_log(f"Repetition detected: '{pattern_str}' x{repeat_count}")
                 return ' '.join(pattern)
         
         # Remove consecutive duplicate words
@@ -678,125 +633,10 @@ class AudioEngine:
         # If we have less than 40% unique content, it's likely hallucination
         if len(unique_words) < len(words) * 0.4:
             print(f"[AudioEngine] Low unique word ratio ({len(unique_words)}/{len(words)}), truncating")
-            _stt_log(f"Low uniqueness: {len(unique_words)}/{len(words)}")
             # Take only first phrase (max 10 words)
             return ' '.join(unique_words[:10])
         
         return ' '.join(unique_words)
-    
-    def _filter_by_word_count(self, text: str, max_words: int = 3) -> Optional[str]:
-        """
-        FIX #5: Filter transcription to max_words limit.
-        IMPROVED: Clean punctuation first, allow up to 4 words for commands like "open camera 1"
-        """
-        if not text:
-            return text
-        
-        # Clean punctuation and extra whitespace before counting
-        import string
-        cleaned = text.translate(str.maketrans('', '', string.punctuation))
-        words = cleaned.split()
-        word_count = len(words)
-        
-        # Be more lenient: allow up to 4 words (covers "open robot cell", "open camera 1", etc.)
-        # Only reject if significantly longer (5+ words likely not a valid command)
-        if word_count > 4:
-            print(f"[AudioEngine] Text exceeds word limit ({word_count} words): '{text}'")
-            _stt_log(f"Rejected: {word_count} words > 4 limit")
-            return None
-        
-        return text
-    
-    def _aggregate_commands(self, text: str, available_commands: List[str]) -> Optional[str]:
-        """
-        FIX #7: Command aggregation and disambiguation logic.
-        When transcription contains multiple command instances, select by:
-        1. Prefer longer/more specific commands (e.g., "open camera 1" over "open camera")
-        2. Highest frequency (mode)
-        3. Tie-breaker: first occurrence
-        
-        Args:
-            text: Raw transcription that may contain multiple commands
-            available_commands: List of valid command phrases
-        
-        Returns:
-            Single disambiguated command, or None if no commands found
-        """
-        if not text or not available_commands:
-            return None
-        
-        text_lower = text.lower()
-        found_commands = []
-        
-        # PRIORITY FIX: Sort commands by length (longest first) to match specific commands first
-        # This prevents "open camera" from matching when "open camera 1" is present
-        sorted_commands = sorted(available_commands, key=lambda x: len(x), reverse=True)
-        
-        # Find all command occurrences in text
-        matched_positions = set()  # Track positions already matched by longer commands
-        
-        for cmd in sorted_commands:
-            cmd_lower = cmd.lower()
-            # Count occurrences, but skip if position overlaps with a longer match
-            start_pos = 0
-            while True:
-                pos = text_lower.find(cmd_lower, start_pos)
-                if pos == -1:
-                    break
-                
-                # Check if this position overlaps with an already-matched longer command
-                cmd_end = pos + len(cmd_lower)
-                overlaps = False
-                for matched_start, matched_end in matched_positions:
-                    if not (cmd_end <= matched_start or pos >= matched_end):
-                        overlaps = True
-                        break
-                
-                if not overlaps:
-                    found_commands.append((pos, cmd))
-                    matched_positions.add((pos, cmd_end))
-                
-                start_pos = pos + 1
-        
-        if not found_commands:
-            return None
-        
-        # Count frequency of each command
-        from collections import Counter
-        command_list = [cmd for _, cmd in found_commands]
-        command_freq = Counter(command_list)
-        
-        # Find command(s) with highest frequency
-        max_freq = max(command_freq.values())
-        top_commands = [cmd for cmd, freq in command_freq.items() if freq == max_freq]
-        
-        # If tie in frequency, prefer longer command, then first occurrence
-        if len(top_commands) > 1:
-            # First, prefer longer commands (more specific)
-            max_length = max(len(cmd) for cmd in top_commands)
-            longest_commands = [cmd for cmd in top_commands if len(cmd) == max_length]
-            
-            if len(longest_commands) == 1:
-                selected = longest_commands[0]
-                print(f"[AudioEngine] Command selected (longest): '{selected}' (freq={max_freq})")
-                _stt_log(f"Aggregation: '{selected}' selected as longest from {len(top_commands)} tied commands")
-                return selected
-            
-            # If still tied, select by first occurrence
-            first_pos = float('inf')
-            selected = longest_commands[0]
-            for pos, cmd in found_commands:
-                if cmd in longest_commands and pos < first_pos:
-                    first_pos = pos
-                    selected = cmd
-            print(f"[AudioEngine] Tie broken by first occurrence: '{selected}' (freq={max_freq})")
-            _stt_log(f"Aggregation: '{selected}' selected from {len(top_commands)} tied commands")
-            return selected
-        else:
-            selected = top_commands[0]
-            print(f"[AudioEngine] Command aggregated: '{selected}' (freq={max_freq})")
-            _stt_log(f"Aggregation: '{selected}' selected with freq={max_freq}")
-            return selected
     
     def reset_wake_state(self):
         """Reset to inactive state"""
