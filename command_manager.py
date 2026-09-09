@@ -1,9 +1,12 @@
 # ============================================================================
 # command_manager.py
 # ============================================================================
+from cmath import phase
 
 import json
+import re
 import os
+from opencc import OpenCC
 import shutil
 import threading
 import time
@@ -22,7 +25,27 @@ class CommandManager:
     - Lightweight storage
     - Performance optimizations
     """
-    
+    def _normalize_command_text(self, text: str) -> str:
+        """
+        把繁体转换成简体，并清除空格和常见标点。
+        """
+        if not isinstance(text, str):
+            return ""
+
+        text = text.strip().lower()
+
+        # 繁体中文统一转换成简体中文
+        text = self.chinese_converter.convert(text)
+
+        # 清除中英文空格及常见标点
+        text = re.sub(
+            r"[\s，。！？、,.!?;；:：]+",
+            "",
+            text
+        )
+
+        return text
+
     def __init__(self, data_file: str = "commands_hotwords.json"):
         # Prefer external, user-editable JSON next to the executable
         if getattr(sys, 'frozen', False):
@@ -44,6 +67,7 @@ class CommandManager:
                 print(f"[CommandMgr] Warning: failed to copy default JSON: {e}")
 
         self.data_file = external_path
+        self.chinese_converter = OpenCC("t2s")
         self._lock = threading.Lock()
         
         # Load data
@@ -106,21 +130,17 @@ class CommandManager:
     def _save_data(self):
         """
         ENHANCED: Save data with improved error handling and atomic write.
-        FIX #3: Prevent contamination by filtering out unwanted fields.
         """
         def _save():
             temp_file = None
             try:
                 with self._lock:
-                    # FIX #3: Filter data to prevent contamination
-                    filtered_data = self._filter_save_data(self.data)
-                    
                     # ENHANCED: Use atomic write pattern (write to temp, then rename)
                     temp_file = f"{self.data_file}.tmp"
                     
                     with open(temp_file, 'w', encoding='utf-8', errors='replace') as f:
                         # CRITICAL: ensure_ascii=False for Unicode support
-                        json.dump(filtered_data, f, indent=2, ensure_ascii=False)
+                        json.dump(self.data, f, indent=2, ensure_ascii=False)
                     
                     # Atomic replace (on Windows, need to remove first)
                     if os.path.exists(self.data_file):
@@ -146,45 +166,6 @@ class CommandManager:
         
         # Save in background thread to avoid blocking
         threading.Thread(target=_save, daemon=True, name="CommandMgr-Save").start()
-    
-    def _filter_save_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        FIX #3: Filter data to prevent contamination of commands_hotwords.json.
-        Remove unauthorized entries like 'global_settings', 'analytics', etc.
-        Only save valid command entries and settings.
-        """
-        # Whitelist of allowed top-level keys
-        allowed_top_keys = {"commands", "settings"}
-        
-        # Whitelist of allowed command metadata fields
-        allowed_cmd_fields = {
-            "text", "weight", "usage_count", "success_count", "training_count",
-            "created_at", "last_used", "created", "success_rate", "alternatives",
-            "category", "confidence_scores", "training_iterations"
-        }
-        
-        filtered = {}
-        
-        # Filter top-level keys
-        for key in allowed_top_keys:
-            if key in data:
-                if key == "commands":
-                    # Filter command entries
-                    filtered_commands = {}
-                    for cmd_name, cmd_data in data["commands"].items():
-                        if isinstance(cmd_data, dict):
-                            # Filter command metadata
-                            filtered_cmd = {
-                                k: v for k, v in cmd_data.items()
-                                if k in allowed_cmd_fields
-                            }
-                            filtered_commands[cmd_name] = filtered_cmd
-                    filtered["commands"] = filtered_commands
-                else:
-                    # Copy settings as-is (already validated structure)
-                    filtered[key] = data[key]
-        
-        return filtered
     
     def _create_backup(self):
         """Create backup of corrupted data file"""
@@ -238,9 +219,8 @@ class CommandManager:
     
     def find_best_match(self, text: str) -> Optional[str]:
         """
-        Find best matching command using enhanced disambiguation logic.
-        IMPROVED: Prioritizes longer, more specific commands over shorter prefixes.
-        Prevents truncation issues like "open robot cell" -> "open robot".
+        Find best matching command using optimized fuzzy matching.
+        Performance optimized for real-time use.
         """
         if not text or not text.strip():
             return None
@@ -252,114 +232,66 @@ class CommandManager:
             if not commands:
                 return None
             
-            # SPECIAL-CASE: Disambiguate "open one" vs "open main"
-            # If the user says "open one" (or "open 1"), force it to map to "open 1" when available.
-            if text in ("open one", "open 1"):
-                if "open 1" in commands:
-                    print("Command matched (special): '" + text + "' -> 'open 1'")
-                    return "open 1"
-            
-            # STEP 1: Quick exact match check first (highest priority)
-            if text in commands:
-                print(f"Command matched (exact): '{text}'")
-                return text
-            
-            # STEP 2: Contextual lookahead - Check for longer commands that contain text
-            # This prevents premature truncation (e.g., "open robot cell" vs "open robot")
-            longer_matches = []
-            for cmd in commands:
-                if cmd.startswith(text) and len(cmd) > len(text):
-                    # Found a longer, more specific command
-                    longer_matches.append(cmd)
-            
-            if longer_matches:
-                # Prefer the longest match (most specific)
-                best_longer = max(longer_matches, key=len)
-                print(f"Command matched (contextual): '{text}' -> '{best_longer}' (longer variant)")
-                return best_longer
-            
-            # STEP 3: Substring containment check (for numbered commands)
-            # e.g., "open camera 1", "template 8" should match exactly even with noise
-            exact_substring_matches = []
-            for cmd in commands:
-                # Check if command words are all present in transcribed text
-                cmd_words = cmd.split()
-                text_words = text.split()
-                
-                # For numbered/lettered commands, check exact word-level containment
-                if len(cmd_words) <= 3:  # Our max word limit
-                    if all(word in text_words for word in cmd_words):
-                        # Calculate position-aware score
-                        positions = [text_words.index(word) for word in cmd_words if word in text_words]
-                        if positions == sorted(positions):  # Words in order
-                            exact_substring_matches.append((cmd, len(cmd_words)))
-            
-            if exact_substring_matches:
-                # Prefer the match with most words (most specific)
-                best_substring = max(exact_substring_matches, key=lambda x: x[1])[0]
-                print(f"Command matched (substring): '{text}' -> '{best_substring}'")
-                return best_substring
-            
-            # STEP 4: Prefix-based disambiguation
-            # Group commands by prefix and prefer longer matches
-            prefix_groups = {}
-            for cmd in commands:
-                words = cmd.split()
-                if len(words) >= 2:
-                    prefix = ' '.join(words[:2])  # First 2 words as prefix
-                    if prefix not in prefix_groups:
-                        prefix_groups[prefix] = []
-                    prefix_groups[prefix].append(cmd)
-            
-            # Check if text matches a prefix group
-            text_words = text.split()
-            if len(text_words) >= 2:
-                text_prefix = ' '.join(text_words[:2])
-                if text_prefix in prefix_groups:
-                    candidates = prefix_groups[text_prefix]
-                    # Among candidates, find best match
-                    best_candidate = None
-                    best_candidate_score = 0.0
-                    
-                    for candidate in candidates:
-                        similarity = SequenceMatcher(None, text, candidate).ratio()
-                        if similarity > best_candidate_score:
-                            best_candidate_score = similarity
-                            best_candidate = candidate
-                    
-                    if best_candidate and best_candidate_score >= self.min_similarity:
-                        print(f"Command matched (prefix-disambiguated): '{text}' -> '{best_candidate}' (score: {best_candidate_score:.3f})")
-                        return best_candidate
-            
-            # STEP 5: Standard fuzzy matching (last resort)
             best_match = None
             best_score = 0.0
-            
-            for cmd in commands:
-                # Calculate similarity
-                similarity = SequenceMatcher(None, text, cmd).ratio()
-                
-                # Weight-adjusted score
-                cmd_data = commands[cmd]
-                weight_bonus = (cmd_data.get("weight", 1.0) - 1.0) * 0.1
-                score = similarity + weight_bonus
-                
-                # CRITICAL: Add penalty for shorter commands when text is longer
-                # Prevents "open robot" from matching "open robot cell"
-                length_diff = len(text.split()) - len(cmd.split())
-                if length_diff > 0:
-                    score -= length_diff * 0.15  # Penalty for each missing word
 
-                # Additional micro-penalty: avoid mapping "open one" to "open main"
-                if text in ("open one", "open 1") and cmd == "open main":
-                    score -= 0.25
-                
-                if score > best_score and similarity >= self.min_similarity:
-                    best_score = score
-                    best_match = cmd
+            # 215-233行加入了中文及其他别名匹配
+            normalize_text = self._normalize_command_text(text)
+
+            for command_name, command_data in commands.items():
+                alternatives = command_data.get("alternatives", [])
+
+                if not isinstance(alternatives, list):
+                    continue
+
+                for alternative in alternatives:
+                    if not isinstance(alternative, str):
+                        continue
+
+                    normalize_alternative = self._normalize_command_text(alternative)
+
+                    if not normalize_alternative:
+                        continue
+                    if normalize_text == normalize_alternative:
+                        print(
+                            f"Command matched (alternative exact): "
+                            f"'{text}' -> '{command_name}'"
+                        )
+                        return command_name
+
+                            # 处理 Whisper 重复输出：
+                        # 例如“打开机器人工作单元打开机器人工作单元”
+                    if (
+                            len(normalize_alternative) >= 3
+                            and normalize_alternative in normalize_text
+                     ):
+                        print(
+                            f"Command matched (alternative contained): "
+                            f"'{text}' -> '{command_name}'"
+                        )
+                        return command_name
+
+            # Quick exact match check first
+            if text in commands:
+                best_match = text
+                best_score = 1.0
+            else:
+                # Fuzzy matching
+                for cmd in commands:
+                    # Calculate similarity
+                    similarity = SequenceMatcher(None, text, cmd).ratio()
+                    
+                    # Weight-adjusted score
+                    cmd_data = commands[cmd]
+                    weight_bonus = (cmd_data.get("weight", 1.0) - 1.0) * 0.1
+                    score = similarity + weight_bonus
+                    
+                    if score > best_score and similarity >= self.min_similarity:
+                        best_score = score
+                        best_match = cmd
             
             if best_match:
-                print(f"Command matched (fuzzy): '{text}' -> '{best_match}' (score: {best_score:.3f})")
+                print(f"Command matched: '{text}' -> '{best_match}' (score: {best_score:.3f})")
                 return best_match
             else:
                 print(f"No command match for: '{text}'")
@@ -405,9 +337,32 @@ class CommandManager:
                 key=lambda x: (x[1].get("weight", 1.0), x[1].get("usage_count", 0)),
                 reverse=True
             )
-            
-            return [cmd for cmd, _ in sorted_commands[:max_count]]
-    
+
+            phrases = []
+
+            for command_name,command_data in sorted_commands:
+                if command_name not in phrases:
+                    phrases.append(command_name)
+
+                alternatives = command_data.get("alternatives", [])
+
+                if isinstance(alternatives,list):
+                    for alternative in alternatives:
+                        if not isinstance(alternative,str):
+                            continue
+
+                        alternative = alternative.strip()
+
+                        if alternative and alternative not in phrases:
+                            phrases.append(alternative)
+
+                if len(phrases) >= max_count:
+                    break
+
+            return phrases[:max_count]
+
+
+
     def train_command(self, command: str) -> float:
         """Train/boost a command's weight"""
         command = command.strip().lower()
