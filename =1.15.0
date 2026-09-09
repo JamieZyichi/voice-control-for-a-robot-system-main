@@ -1,0 +1,20 @@
+Collecting onnxruntime
+  Using cached onnxruntime-1.29.0-cp313-cp313-win_amd64.whl.metadata (5.8 kB)
+Collecting flatbuffers (from onnxruntime)
+  Downloading flatbuffers-25.12.19-py2.py3-none-any.whl.metadata (1.0 kB)
+Collecting numpy>=1.21.6 (from onnxruntime)
+  Downloading numpy-2.5.2-cp313-cp313-win_amd64.whl.metadata (6.6 kB)
+Collecting packaging (from onnxruntime)
+  Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+Collecting protobuf>=4.25.8 (from onnxruntime)
+  Downloading protobuf-7.36.0-cp310-abi3-win_amd64.whl.metadata (595 bytes)
+Downloading onnxruntime-1.29.0-cp313-cp313-win_amd64.whl (14.0 MB)
+   ---------------------------------------- 14.0/14.0 MB 11.3 MB/s  0:00:01
+Downloading numpy-2.5.2-cp313-cp313-win_amd64.whl (12.5 MB)
+   ---------------------------------------- 12.5/12.5 MB 10.9 MB/s  0:00:01
+Downloading protobuf-7.36.0-cp310-abi3-win_amd64.whl (453 kB)
+Downloading flatbuffers-25.12.19-py2.py3-none-any.whl (26 kB)
+Using cached packaging-26.3-py3-none-any.whl (129 kB)
+Installing collected packages: flatbuffers, protobuf, packaging, numpy, onnxruntime
+
+Successfully installed flatbuffers-25.12.19 numpy-2.5.2 onnxruntime-1.29.0 packaging-26.3 protobuf-7.36.0

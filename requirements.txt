@@ -22,7 +22,7 @@ faster-whisper>=0.10.0,<1.0.0    # OpenAI Whisper STT with CTranslate2 optimizat
                                   # REQUIRED: Primary speech recognition engine
                                   # Includes: model loading, transcription, VAD support
 
-ctranslate2>=3.16.0,<4.0.0        # High-performance inference engine for Whisper
+ctranslate2>=3.16.0,<5.0.0        # High-performance inference engine for Whisper
                                   # REQUIRED: Backend for faster-whisper
                                   # Provides: int8 quantization, CPU optimization
 
