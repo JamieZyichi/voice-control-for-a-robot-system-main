@@ -1,8 +1,6 @@
 # ============================================================================
 # command_manager.py
 # ============================================================================
-from cmath import phase
-
 import json
 import re
 import os
@@ -235,8 +233,11 @@ class CommandManager:
             best_match = None
             best_score = 0.0
 
-            # 215-233行加入了中文及其他别名匹配
+            # Match normalized aliases first.  Exact matches take priority;
+            # contained aliases are considered only after every command has
+            # been checked, then the longest (most specific) alias wins.
             normalize_text = self._normalize_command_text(text)
+            contained_matches = []
 
             for command_name, command_data in commands.items():
                 alternatives = command_data.get("alternatives", [])
@@ -259,17 +260,31 @@ class CommandManager:
                         )
                         return command_name
 
-                            # 处理 Whisper 重复输出：
-                        # 例如“打开机器人工作单元打开机器人工作单元”
+                    # Handle repeated Whisper output, but do not return here:
+                    # a later command may have a longer, more specific alias.
                     if (
-                            len(normalize_alternative) >= 3
-                            and normalize_alternative in normalize_text
-                     ):
-                        print(
-                            f"Command matched (alternative contained): "
-                            f"'{text}' -> '{command_name}'"
+                        len(normalize_alternative) >= 4
+                        and normalize_alternative in normalize_text
+                    ):
+                        contained_matches.append(
+                            (
+                                len(normalize_alternative),
+                                command_name,
+                                normalize_alternative,
+                            )
                         )
-                        return command_name
+
+            if contained_matches:
+                _, command_name, matched_alternative = max(
+                    contained_matches,
+                    key=lambda item: item[0]
+                )
+                print(
+                    f"Command matched (alternative contained): "
+                    f"'{text}' -> '{command_name}' "
+                    f"via '{matched_alternative}'"
+                )
+                return command_name
 
             # Quick exact match check first
             if text in commands:

@@ -92,6 +92,9 @@ class AudioEngine:
         self.language = language
         self.device = device
 
+        # 只允许中文和英文
+        self.allowed_languages = {"zh", "en"}
+
         # 将 Whisper 输出的繁体中文统一转换为简体中文
         self.chinese_converter = OpenCC("t2s")
         
@@ -506,6 +509,35 @@ class AudioEngine:
                     condition_on_previous_text=False,  # CRITICAL: Prevent repetition
                     word_timestamps=False  # Faster processing
                 )
+
+                # Whisper can auto-detect many languages.  When command
+                # transcription uses automatic detection, accept only English
+                # and Chinese.  A forced language (used by the English wake
+                # word) bypasses this check.
+                detected_language = getattr(info, "language", None)
+                detected_probability = getattr(info, "language_probability", 0.0)
+                try:
+                    detected_probability = float(detected_probability or 0.0)
+                except (TypeError, ValueError):
+                    detected_probability = 0.0
+
+                _stt_log(
+                    f"Detected language: {detected_language}; "
+                    f"probability={detected_probability:.3f}"
+                )
+
+                if (
+                    effective_language is None
+                    and detected_language not in self.allowed_languages
+                ):
+                    print(
+                        "[AudioEngine] Unsupported language rejected: "
+                        f"{detected_language}"
+                    )
+                    _stt_log(
+                        f"Unsupported language rejected: {detected_language}"
+                    )
+                    return None
                 
                 # CRITICAL FIX: Convert generator to list ONCE
                 # Aggressively limit segments and detect repetition
@@ -542,6 +574,23 @@ class AudioEngine:
                     fp16=False,
                     initial_prompt=initial_prompt
                 )
+
+                detected_language = result.get("language")
+                _stt_log(f"Detected language: {detected_language}")
+
+                if (
+                    effective_language is None
+                    and detected_language not in self.allowed_languages
+                ):
+                    print(
+                        "[AudioEngine] Unsupported language rejected: "
+                        f"{detected_language}"
+                    )
+                    _stt_log(
+                        f"Unsupported language rejected: {detected_language}"
+                    )
+                    return None
+
                 text = result.get("text", "")
                 
             else:
