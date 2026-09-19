@@ -1,4 +1,8 @@
 {
+  "settings": {
+    "max_weight": 3.0,
+    "weight_decay": 0.98
+  },
   "commands": {
     "open main": {
       "text": "open main",
@@ -213,11 +217,11 @@
     "open camera 1": {
       "text": "open camera 1",
       "weight": 3.0,
-      "usage_count": 9,
+      "usage_count": 10,
       "success_count": 0,
       "training_count": 0,
       "created_at": "2025-10-30T20:58:34.725070",
-      "last_used": "2026-09-08T15:40:13.033907",
+      "last_used": "2026-09-15T19:54:39.237662",
       "created": "2025-10-31T10:09:45.303718",
       "success_rate": 1.0,
       "alternatives": [],
@@ -726,9 +730,5 @@
       "last_used": "2026-08-26T00:20:43.790142",
       "created": "2026-08-26T00:01:39.668581"
     }
-  },
-  "settings": {
-    "max_weight": 3.0,
-    "weight_decay": 0.98
   }
 }

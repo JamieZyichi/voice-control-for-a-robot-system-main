@@ -22,7 +22,6 @@ except ImportError:
     print("[INIT] Using standard AudioEngine")
     
 from model_manager import SUPPORTED_MODELS
-from ui_language import UILanguage, UIDialogs
 
 # ============================================================================
 # UI Configuration
@@ -100,8 +99,6 @@ class VoiceControlApp:
     
     def __init__(self, root):
         self.root = root
-        self.ui_language = UILanguage(root)
-        self.dialogs = UIDialogs(self.ui_language)
         self.root.title("Voice Control System")
         self.root.geometry("1000x750")
         self.root.configure(bg=COLORS["bg"])
@@ -193,12 +190,11 @@ class VoiceControlApp:
     def _build_ui(self):
         """Build the reference layout around the original four native tabs."""
         self._setup_styles()
-        self.status_var = self.ui_language.variable("Initializing...")
+        self.status_var = tk.StringVar(value="Initializing...")
         # Reuse the original logo loader and source artwork, never the AI mockup logo.
         logo_holder = tk.Frame(self.root)
         self._init_logo_static(logo_holder, 50)
-        self.header = BrandHeader(self.root, self.status_var, self.logo_photo,
-                                  translate=self.ui_language.text, on_language=self._toggle_ui_language)
+        self.header = BrandHeader(self.root, self.status_var, self.logo_photo)
         self.header.pack(fill=tk.X, pady=(0, 12))
 
         notebook = ttk.Notebook(self.root)
@@ -223,11 +219,6 @@ class VoiceControlApp:
         self.result_text.vbar.configure(bg="#CFD6E1", troughcolor="#F6F8FC",
                                        activebackground="#AEBACD", relief=tk.FLAT,
                                        bd=0, width=10, highlightthickness=0)
-        self.ui_language.register_tree(self.root)
-
-    def _toggle_ui_language(self):
-        """Change presentation in place without touching the engine or log text."""
-        self.ui_language.toggle()
 
     def _init_logo(self, header: tk.Frame, left_area: tk.Frame):
         """Load the NTU logo and bind height-based scaling to the header size."""
@@ -371,9 +362,8 @@ class VoiceControlApp:
         tk.Label(recognition, text="Voice Recognition", font=FONTS["title"],
                  bg=COLORS["surface"], fg=COLORS["text"]).pack(anchor="w", pady=(0, 14))
 
-        self.detailed_status_var = self.ui_language.variable("System starting up...")
-        status_frame = StatusPanel(recognition, self.detailed_status_var,
-                                   translate=self.ui_language.text)
+        self.detailed_status_var = tk.StringVar(value="System starting up...")
+        status_frame = StatusPanel(recognition, self.detailed_status_var)
         status_frame.pack(fill=tk.X)
 
         btn_frame = tk.Frame(recognition, bg=COLORS["surface"])
@@ -772,7 +762,7 @@ class VoiceControlApp:
     def _reload_commands_json(self):
         """Manually reload the JSON command file"""
         if not self.audio_engine or not hasattr(self.audio_engine, 'cmd_hotword_mgr'):
-            self.dialogs.showerror("Error", "Command manager not available")
+            messagebox.showerror("Error", "Command manager not available")
             return
         
         try:
@@ -781,11 +771,11 @@ class VoiceControlApp:
             self._refresh_commands()
             self._refresh_training()
             self._log("[SUCCESS] Commands reloaded from JSON")
-            self.dialogs.showinfo("Success", "Commands reloaded from JSON file")
+            messagebox.showinfo("Success", "Commands reloaded from JSON file")
         except Exception as e:
             error_msg = f"Failed to reload JSON: {e}"
             self._log(f"[ERROR] {error_msg}")
-            self.dialogs.showerror("Error", error_msg)
+            messagebox.showerror("Error", error_msg)
     
     # ========================================================================
     # Control Population
@@ -825,7 +815,7 @@ class VoiceControlApp:
             return
         
         if not self.system_ready:
-            self.dialogs.showwarning("System Not Ready", 
+            messagebox.showwarning("System Not Ready", 
                                  "System is not fully initialized. Please wait.")
             return
         
@@ -1104,21 +1094,21 @@ class VoiceControlApp:
             self._refresh_commands()
             self._refresh_training()
             self._log(f"[SUCCESS] Command added: '{command}'")
-            self.dialogs.showinfo("Success", f"Command '{command}' added")
+            messagebox.showinfo("Success", f"Command '{command}' added")
         else:
-            self.dialogs.showerror("Error", f"Failed to add command '{command}'")
+            messagebox.showerror("Error", f"Failed to add command '{command}'")
     
     def _delete_command(self):
         """Delete selected command"""
         selection = self.cmd_tree.selection()
         if not selection:
-            self.dialogs.showwarning("No Selection", "Please select a command to delete.")
+            messagebox.showwarning("No Selection", "Please select a command to delete.")
             return
         
         item = self.cmd_tree.item(selection[0])
         command = item["values"][0]
         
-        if self.dialogs.askyesno("Confirm", f"Delete command '{command}'?"):
+        if messagebox.askyesno("Confirm", f"Delete command '{command}'?"):
             if self.audio_engine and self.audio_engine.remove_command(command):
                 self._refresh_commands()
                 self._refresh_training()
@@ -1151,7 +1141,7 @@ class VoiceControlApp:
         """Train selected command"""
         selection = self.train_tree.selection()
         if not selection:
-            self.dialogs.showwarning("No Selection", "Please select a command to train.")
+            messagebox.showwarning("No Selection", "Please select a command to train.")
             return
         
         item = self.train_tree.item(selection[0])
@@ -1161,7 +1151,7 @@ class VoiceControlApp:
             new_weight = self.audio_engine.train_command(command)
             self._refresh_training()
             self._log(f"[INFO] Command trained: '{command}' -> weight: {new_weight:.2f}")
-            self.dialogs.showinfo("Training", f"Command '{command}' trained. Weight: {new_weight:.2f}")
+            messagebox.showinfo("Training", f"Command '{command}' trained. Weight: {new_weight:.2f}")
     
     def _refresh_training(self):
         """Refresh training data"""
@@ -1233,7 +1223,7 @@ class VoiceControlApp:
         # Update display
         self.system_text.config(state=tk.NORMAL)
         self.system_text.delete("1.0", tk.END)
-        self.ui_language.set_text(self.system_text, status_text)
+        self.system_text.insert("1.0", status_text)
         self.system_text.config(state=tk.DISABLED)
     
     def _show_health_report(self):
@@ -1254,14 +1244,13 @@ class VoiceControlApp:
         # Report text
         report_text = tk.Text(popup, font=FONTS["mono"], wrap=tk.WORD)
         report_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.ui_language.set_text(report_text, report)
+        report_text.insert("1.0", report)
         report_text.config(state=tk.DISABLED)
         
         # Close button
         ttk.Button(popup, text="Close", command=popup.destroy,
                    style="Primary.TButton").pack(pady=10)
         self._style_content(popup)
-        self.ui_language.register_tree(popup)
     
     def _save_log(self):
         """Save activity log"""
@@ -1273,10 +1262,10 @@ class VoiceControlApp:
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(log_content)
             
-            self.dialogs.showinfo("Success", f"Log saved as {filename}")
+            messagebox.showinfo("Success", f"Log saved as {filename}")
             self._log(f"[INFO] Log saved: {filename}")
         except Exception as e:
-            self.dialogs.showerror("Error", f"Failed to save log: {e}")
+            messagebox.showerror("Error", f"Failed to save log: {e}")
     
     # ========================================================================
     # UI Helpers

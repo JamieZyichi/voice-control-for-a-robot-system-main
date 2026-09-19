@@ -1,1 +1,1 @@
-open main
+open camera 1

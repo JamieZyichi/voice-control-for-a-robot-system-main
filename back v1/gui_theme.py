@@ -100,22 +100,6 @@ def install_theme(root):
     style.configure('Start.TButton', font=('Segoe UI', 12, 'bold'), padding=(20, 13))
     style.configure('Stop.Danger.TButton', font=('Segoe UI', 12, 'bold'), padding=(20, 13))
 
-    # Identical radius, gradient, border and font to BrandHeader's Ready capsule.
-    normal = surface(root, 64, 36, 18, '#429DFC', '#2E8DF5', '#6DAFFC')
-    hover = surface(root, 64, 36, 18, '#57AAFF', '#3D99FC', '#91C1FF')
-    images.extend((normal, hover))
-    if 'VoiceLanguage.button' not in style.element_names():
-        style.element_create('VoiceLanguage.button', 'image', normal,
-                             ('pressed', hover), ('active', hover),
-                             border=18, padding=0, sticky='nsew')
-    style.layout('Language.TButton', [('VoiceLanguage.button', {'sticky': 'nsew', 'children': [
-        ('Button.focus', {'sticky': 'nsew', 'children': [
-            ('Button.padding', {'sticky': 'nsew', 'children': [
-                ('Button.label', {'sticky': 'nsew'})]})]})]})])
-    style.configure('Language.TButton', font=FONTS['small'], foreground='white',
-                    background='#2588F6', focuscolor='white', focusthickness=1,
-                    padding=(10, 3), anchor='center')
-
     selected = rounded('tab', '#FFFFFF', '#FFFFFF', 20, '#E4EBF6', size=44)
     unfocused = rounded('track', '#E9EEF7', '#E5EBF5', 20, '#F9FBFF', size=44)
     hover = rounded('hover', '#F2F6FC', '#EEF3FA', 20, size=44)
@@ -147,17 +131,13 @@ def install_theme(root):
 
 class BrandHeader(tk.Canvas):
     """Paint branding and a status badge; the existing StringVar remains authoritative."""
-    def __init__(self, parent, status_var, logo=None, translate=str, on_language=None):
+    def __init__(self, parent, status_var, logo=None):
         super().__init__(parent, height=80, bg=COLORS['bg'], bd=0, highlightthickness=0)
         self.status_var, self.logo = status_var, logo
-        self.translate = translate
         self._size = None
         self._gradient = None
         self._font = tkfont.Font(root=parent, family='Segoe UI', size=18, weight='bold')
         self._badge_font = tkfont.Font(root=parent, font=FONTS['small'])
-        self.language_button = ttk.Button(self, text='中/EN', style='Language.TButton',
-                                          command=on_language, cursor='hand2', takefocus=True)
-        self.language_button.bind('<Return>', lambda event: self.language_button.invoke())
         self.bind('<Configure>', self._paint)
         self._trace = status_var.trace_add('write', self._paint)
         self.bind('<Destroy>', self._dispose, add='+')
@@ -179,19 +159,14 @@ class BrandHeader(tk.Canvas):
             self.create_image(30, height / 2, image=self.logo, anchor='w')
         text = self.status_var.get()
         badge_width = min(220, max(105, self._badge_font.measure(text) + 42))
-        toggle_width, gap = 80, 10
-        toggle_x = width - badge_width - 26 - toggle_width - gap
-        left_edge = (self.logo.width() + 48) if self.logo else 24
-        right_edge = toggle_x - 18
-        title = self.translate('Voice Control System')
-        title_room = max(80, right_edge - left_edge)
-        for size in range(18, 8, -1):
+        # Keep the centered title clear of both branding and longer live states.
+        reserved = max((self.logo.width() + 30) if self.logo else 30, badge_width + 26)
+        title_room = max(180, width - 2 * reserved - 28)
+        for size in range(18, 10, -1):
             self._font.configure(size=size)
-            if self._font.measure(title) <= title_room:
+            if self._font.measure('Voice Control System') <= title_room:
                 break
-        title_width = self._font.measure(title)
-        title_x = min(max(width / 2, left_edge + title_width / 2), right_edge - title_width / 2)
-        self.create_text(title_x, height / 2, text=title, tags='brand_title',
+        self.create_text(width / 2, height / 2, text='Voice Control System',
                          font=self._font, fill='white')
         lines = max(1, math.ceil(self._badge_font.measure(text) / (badge_width - 40)))
         badge_height = max(36, lines * self._badge_font.metrics('linespace') + 10)
@@ -199,19 +174,16 @@ class BrandHeader(tk.Canvas):
         self._badge_image = badge
         x = width - badge_width - 26
         self.create_image(x, height / 2, image=badge, anchor='w')
-        dot = '#20DF85' if getattr(self.status_var, 'source', text) == 'Ready' else '#DCEBFF'
+        dot = '#20DF85' if text == 'Ready' else '#DCEBFF'
         self.create_oval(x + 14, height / 2 - 5, x + 24, height / 2 + 5, fill=dot, outline='')
         self.create_text(x + 32, height / 2, text=text, anchor='w',
-                         width=badge_width - 40, font=self._badge_font, fill='white', tags='status_text')
-        self.language_button.place(x=toggle_x, y=(height - badge_height) / 2,
-                                   width=toggle_width, height=badge_height)
+                         width=badge_width - 40, font=self._badge_font, fill='white')
 
 class StatusPanel(tk.Canvas):
     """Rounded gradient behind the unchanged detailed-status text."""
-    def __init__(self, parent, textvariable, translate=str):
+    def __init__(self, parent, textvariable):
         super().__init__(parent, bg='white', height=86, bd=0, highlightthickness=0)
         self.variable = textvariable
-        self.translate = translate
         self._size = None
         self._gradient = None
         self._trace = self.variable.trace_add('write', self._paint)
@@ -227,7 +199,7 @@ class StatusPanel(tk.Canvas):
         if width < 2:
             return
         self.delete('all')
-        self.create_text(22, 16, anchor='nw', text=self.translate('RECOGNITION STATUS'),
+        self.create_text(22, 16, anchor='nw', text='RECOGNITION STATUS',
                          font=('Segoe UI', 9, 'bold'), fill='#B9C5D7')
         caption = self.create_text(22, 40, anchor='nw', text=self.variable.get(),
                                    width=max(120, width - 44),
