@@ -1,0 +1,222 @@
+[11:07:39] INFO: ======================================================================
+[11:07:39] INFO: STARTING BUILD PROCESS
+[11:07:39] INFO: ======================================================================
+[11:07:39] INFO: 
+[11:07:39] INFO: STEP: Dependency Check
+[11:07:39] INFO: ----------------------------------------------------------------------
+[11:07:39] INFO: Checking dependencies...
+[11:07:40] INFO: ✓ pyinstaller: PyInstaller build tool - v6.22.2
+[11:07:42] INFO: ✓ faster-whisper: Speech recognition engine
+[11:07:42] INFO:   ↳ ctranslate2 available
+[11:07:42] INFO: ✓ pywin32: Windows COM/SAPI support (CRITICAL) - 3 voices detected
+[11:07:42] INFO: ✓ numpy: Numerical processing - v1.26.4
+[11:07:42] INFO: ✓ pyaudio: Audio capture
+[11:07:42] INFO: ✓ tkinter: GUI framework
+[11:07:42] SUCCESS: ✓ All required dependencies satisfied
+[11:07:42] INFO: 
+[11:07:42] INFO: Checking optional dependencies (for VAD)...
+[11:07:43] INFO: ✓ onnxruntime: VAD (Voice Activity Detection) support - recommended - v1.23.2
+[11:07:43] INFO: 
+[11:07:43] INFO: STEP: Runtime Hooks
+[11:07:43] INFO: ----------------------------------------------------------------------
+[11:07:43] INFO: Creating runtime hooks...
+[11:07:43] INFO: ✓ Created: runtime_hooks\hook_com_init.py
+[11:07:43] INFO: ✓ Created: runtime_hooks\hook_env_setup.py
+[11:07:43] SUCCESS: ✓ Runtime hooks created successfully
+[11:07:43] INFO: 
+[11:07:43] INFO: STEP: Configuration Files
+[11:07:43] INFO: ----------------------------------------------------------------------
+[11:07:43] INFO: Preparing configuration files...
+[11:07:43] INFO: ✓ Exists: commands_hotwords.json
+[11:07:43] INFO: ✓ Created: tts_config.json
+[11:07:43] SUCCESS: ✓ Configuration files ready
+[11:07:43] INFO: 
+[11:07:43] INFO: STEP: Spec File
+[11:07:43] INFO: ----------------------------------------------------------------------
+[11:07:43] INFO: Creating enhanced PyInstaller spec file...
+[11:07:43] INFO: ✓ Including faster-whisper VAD assets from C:\Users\jasmine0511\AppData\Local\Programs\Python\Python310\lib\site-packages\faster_whisper\assets
+[11:07:43] SUCCESS: ✓ Spec file created: voice_control_v2.spec
+[11:07:43] INFO: 
+[11:07:43] INFO: STEP: Clean Build Directories
+[11:07:43] INFO: ----------------------------------------------------------------------
+[11:07:43] INFO: Cleaning build directories...
+[11:07:43] INFO: 
+[11:07:43] INFO: STEP: Run PyInstaller
+[11:07:43] INFO: ----------------------------------------------------------------------
+[11:07:43] INFO: Running PyInstaller...
+[11:07:43] INFO: Spec file: voice_control_v2.spec
+[11:07:43] INFO: Command: C:\Users\jasmine0511\AppData\Local\Programs\Python\Python310\python.exe -m PyInstaller --clean --noconfirm voice_control_v2.spec
+799 INFO: PyInstaller: 6.22.2, contrib hooks: 2026.7
+799 INFO: Python: 3.10.4
+850 INFO: Platform: Windows-10-10.0.19045-SP0
+850 INFO: Python environment: C:\Users\jasmine0511\AppData\Local\Programs\Python\Python310
+867 INFO: Removing temporary files and cleaning cache in C:\Users\jasmine0511\AppData\Local\pyinstaller
+867 INFO: Module search paths (PYTHONPATH):
+['E:\\6008\\voice-control-for-a-robot-system-main\\voice-control-for-a-robot-system-main',
+ 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\python310.zip',
+ 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\DLLs',
+ 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib',
+ 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310',
+ 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages',
+ 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\win32',
+ 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\win32\\lib',
+ 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\pythonwin',
+ 'E:\\6008\\voice-control-for-a-robot-system-main\\voice-control-for-a-robot-system-main']
+2315 INFO: Appending 'binaries' from .spec
+2315 INFO: Appending 'datas' from .spec
+2349 INFO: checking Analysis
+2349 INFO: Building Analysis because Analysis-00.toc is non existent
+2349 INFO: Looking for Python shared library...
+2349 INFO: Using Python shared library: C:\Users\jasmine0511\AppData\Local\Programs\Python\Python310\python310.dll
+2349 INFO: Running Analysis Analysis-00.toc
+2349 INFO: Target bytecode optimization level: 0
+2349 INFO: Initializing module dependency graph...
+2366 INFO: Initializing module graph hook caches...
+2682 INFO: Analyzing modules for base_library.zip ...
+4232 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+4865 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+6597 INFO: Processing standard module hook 'hook-math.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+8780 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+11895 INFO: Caching module dependency graph...
+12045 INFO: Analyzing E:\6008\voice-control-for-a-robot-system-main\voice-control-for-a-robot-system-main\main_voice_app.py
+12162 INFO: Processing pre-find-module-path hook 'hook-tkinter.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+12162 INFO: TclTkInfo: initializing cached Tcl/Tk info...
+13395 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+13728 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+15414 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+15828 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+16314 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+16844 INFO: Processing standard module hook 'hook-_ctypes.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+17784 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+17843 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+20626 INFO: Processing standard module hook 'hook-webbrowser.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+24008 INFO: Processing standard module hook 'hook-opencc.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+24158 INFO: Processing standard module hook 'hook-pythoncom.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+24424 INFO: Processing standard module hook 'hook-pywintypes.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+24641 INFO: Processing pre-safe-import-module hook 'hook-win32com.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+24908 INFO: Processing standard module hook 'hook-win32com.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+25507 INFO: Processing standard module hook 'hook-av.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+27656 INFO: Processing standard module hook 'hook-urllib3.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+27890 INFO: Processing pre-safe-import-module hook 'hook-backports.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+27890 INFO: SetuptoolsInfo: initializing cached setuptools info...
+29289 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+30691 INFO: Processing standard module hook 'hook-certifi.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+30832 INFO: Processing standard module hook 'hook-charset_normalizer.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+31535 INFO: Processing pre-safe-import-module hook 'hook-importlib_resources.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+32386 INFO: Processing standard module hook 'hook-sqlite3.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+34976 INFO: Processing standard module hook 'hook-jinja2.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+36045 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+36189 INFO: Processing standard module hook 'hook-fsspec.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+37941 INFO: Processing pre-safe-import-module hook 'hook-tensorflow.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+38175 INFO: Processing standard module hook 'hook-onnxruntime.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+38792 INFO: Processing standard module hook 'hook-pkg_resources.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+41747 INFO: Analyzing hidden import 'ctranslate2.specs'
+41893 INFO: Analyzing hidden import 'ctranslate2.converters'
+42395 INFO: Analyzing hidden import 'win32com.gen_py'
+42395 ERROR: Hidden import 'win32com.gen_py' not found
+42395 INFO: Analyzing hidden import 'win32timezone'
+42468 INFO: Analyzing hidden import '_portaudio'
+42468 ERROR: Hidden import '_portaudio' not found
+42468 INFO: Processing module hooks (post-graph stage)...
+43765 INFO: Processing pre-safe-import-module hook 'hook-distutils.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+43780 INFO: Processing pre-find-module-path hook 'hook-distutils.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+43780 INFO: Processing standard module hook 'hook-distutils.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+43812 INFO: Processing standard module hook 'hook-distutils.util.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+43905 INFO: Processing standard module hook 'hook-_osx_support.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+45122 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks'
+45195 INFO: Performing binary vs. data reclassification (1015 entries)
+46350 INFO: Looking for ctypes DLLs
+46412 WARNING: Library ntdll required via ctypes not found
+46501 INFO: Analyzing run-time hooks ...
+46501 INFO: Including custom run-time hook 'runtime_hooks\\hook_com_init.py'
+46516 INFO: Including custom run-time hook 'runtime_hooks\\hook_env_setup.py'
+46532 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+46547 INFO: Including run-time hook 'pyi_rth__tkinter.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+46547 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+46547 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+46563 INFO: Including run-time hook 'pyi_rth_pywintypes.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+46563 INFO: Including run-time hook 'pyi_rth_pythoncom.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+46563 INFO: Including run-time hook 'pyi_rth_pkgres.py' from 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+46735 INFO: Creating base_library.zip...
+46798 INFO: Looking for dynamic libraries
+C:\Users\jasmine0511\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\building\build_main.py:227: UserWarning: The numpy.array_api submodule is still experimental. See NEP 47.
+  __import__(package)
+50710 INFO: Extra DLL search directories (AddDllDirectory): ['C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\numpy.libs', 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\ctranslate2', 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\ctranslate2/../_rocm_sdk_core/bin', 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\av.libs']
+50710 INFO: Extra DLL search directories (PATH): []
+57768 WARNING: Library not found: could not resolve 'AVICAP32.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\av.libs\\avdevice-60-9911e1cad3d5adb0f7a6b4801121d668.dll'.
+57768 WARNING: Library not found: could not resolve 'SHLWAPI.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\av.libs\\avdevice-60-9911e1cad3d5adb0f7a6b4801121d668.dll'.
+57768 WARNING: Library not found: could not resolve 'Secur32.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\av.libs\\avformat-60-57a2858188ed261cf3f90db4ed39d223.dll'.
+57768 WARNING: Library not found: could not resolve 'bcrypt.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\av.libs\\avutil-58-344b72f391409293b0c0bd4e9ad31f13.dll'.
+57768 WARNING: Library not found: could not resolve 'WINMM.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\pyaudio\\_portaudio.cp310-win_amd64.pyd'.
+57768 WARNING: Library not found: could not resolve 'SETUPAPI.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\pyaudio\\_portaudio.cp310-win_amd64.pyd'.
+57799 WARNING: Library not found: could not resolve 'imagehlp.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\ctranslate2\\libiomp5md.dll'.
+57815 WARNING: Library not found: could not resolve 'WINTRUST.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\ctranslate2\\libiomp5md.dll'.
+57815 WARNING: Library not found: could not resolve 'SETUPAPI.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\onnxruntime\\capi\\onnxruntime.dll'.
+57815 WARNING: Library not found: could not resolve 'dxgi.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\onnxruntime\\capi\\onnxruntime.dll'.
+57846 WARNING: Library not found: could not resolve 'dbghelp.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\onnxruntime\\capi\\onnxruntime.dll'.
+57862 WARNING: Library not found: could not resolve 'VERSION.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\python310.dll'.
+57924 WARNING: Library not found: could not resolve 'OLEACC.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\pywin32_system32\\pythoncom310.dll'.
+57924 WARNING: Library not found: could not resolve 'urlmon.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\pywin32_system32\\pythoncom310.dll'.
+57971 WARNING: Library not found: could not resolve 'IPHLPAPI.DLL', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\DLLs\\_socket.pyd'.
+58018 WARNING: Library not found: could not resolve 'SHLWAPI.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\win32comext\\shell\\shell.pyd'.
+58051 WARNING: Library not found: could not resolve 'pdh.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\win32\\win32pdh.pyd'.
+58132 WARNING: Library not found: could not resolve 'Secur32.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\win32\\win32api.pyd'.
+58148 WARNING: Library not found: could not resolve 'VERSION.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\win32\\win32api.pyd'.
+58163 WARNING: Library not found: could not resolve 'mfc140u.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\pythonwin\\win32ui.pyd'.
+58163 WARNING: Library not found: could not resolve 'WINSPOOL.DRV', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\pythonwin\\win32ui.pyd'.
+58171 WARNING: Library not found: could not resolve 'COMCTL32.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\pythonwin\\win32ui.pyd'.
+58171 WARNING: Library not found: could not resolve 'SETUPAPI.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\onnxruntime\\capi\\onnxruntime_pybind11_state.pyd'.
+58187 WARNING: Library not found: could not resolve 'dxgi.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\onnxruntime\\capi\\onnxruntime_pybind11_state.pyd'.
+58202 WARNING: Library not found: could not resolve 'dbghelp.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\onnxruntime\\capi\\onnxruntime_pybind11_state.pyd'.
+58218 WARNING: Library not found: could not resolve 'bcryptprimitives.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\tokenizers\\tokenizers.pyd'.
+58221 WARNING: Library not found: could not resolve 'ntdll.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\tokenizers\\tokenizers.pyd'.
+58230 WARNING: Library not found: could not resolve 'ntdll.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\hf_xet\\hf_xet.pyd'.
+58230 WARNING: Library not found: could not resolve 'iphlpapi.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\hf_xet\\hf_xet.pyd'.
+58230 WARNING: Library not found: could not resolve 'powrprof.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\hf_xet\\hf_xet.pyd'.
+58230 WARNING: Library not found: could not resolve 'bcryptprimitives.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\hf_xet\\hf_xet.pyd'.
+58245 WARNING: Library not found: could not resolve 'psapi.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\hf_xet\\hf_xet.pyd'.
+58245 WARNING: Library not found: could not resolve 'pdh.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\hf_xet\\hf_xet.pyd'.
+58245 WARNING: Library not found: could not resolve 'combase.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\hf_xet\\hf_xet.pyd'.
+58442 WARNING: Library not found: could not resolve 'bcrypt.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\DLLs\\libcrypto-1_1.dll'.
+58463 WARNING: Library not found: could not resolve 'COMDLG32.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\DLLs\\tk86t.dll'.
+58478 WARNING: Library not found: could not resolve 'IMM32.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\DLLs\\tk86t.dll'.
+58478 WARNING: Library not found: could not resolve 'COMCTL32.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\DLLs\\tk86t.dll'.
+58478 WARNING: Library not found: could not resolve 'NETAPI32.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\DLLs\\tcl86t.dll'.
+58494 WARNING: Library not found: could not resolve 'USERENV.dll', dependency of 'C:\\Users\\jasmine0511\\AppData\\Local\\Programs\\Python\\Python310\\DLLs\\tcl86t.dll'.
+58783 INFO: Warnings written to E:\6008\voice-control-for-a-robot-system-main\voice-control-for-a-robot-system-main\build\voice_control_v2\warn-voice_control_v2.txt
+59212 INFO: Graph cross-reference written to E:\6008\voice-control-for-a-robot-system-main\voice-control-for-a-robot-system-main\build\voice_control_v2\xref-voice_control_v2.html
+59448 INFO: checking PYZ
+59448 INFO: Building PYZ because PYZ-00.toc is non existent
+59448 INFO: Building PYZ (ZlibArchive) E:\6008\voice-control-for-a-robot-system-main\voice-control-for-a-robot-system-main\build\voice_control_v2\PYZ-00.pyz
+61110 INFO: Building PYZ (ZlibArchive) E:\6008\voice-control-for-a-robot-system-main\voice-control-for-a-robot-system-main\build\voice_control_v2\PYZ-00.pyz completed successfully.
+61282 INFO: checking PKG
+61282 INFO: Building PKG because PKG-00.toc is non existent
+61282 INFO: Building PKG (CArchive) VoiceControl.pkg
+150834 INFO: Building PKG (CArchive) VoiceControl.pkg completed successfully.
+150928 INFO: Bootloader C:\Users\jasmine0511\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+150928 INFO: checking EXE
+150928 INFO: Building EXE because EXE-00.toc is non existent
+150928 INFO: Building EXE from EXE-00.toc
+150928 INFO: Copying bootloader EXE to E:\6008\voice-control-for-a-robot-system-main\voice-control-for-a-robot-system-main\dist\VoiceControl.exe
+150959 INFO: Copying icon to EXE
+150991 INFO: Copying 0 resources to EXE
+150991 INFO: Embedding manifest in EXE
+150991 INFO: Appending PKG archive to EXE
+154619 INFO: Fixing EXE headers
+167790 INFO: Building EXE from EXE-00.toc completed successfully.
+167887 INFO: Build complete! The results are available in: E:\6008\voice-control-for-a-robot-system-main\voice-control-for-a-robot-system-main\dist
+[11:10:31] SUCCESS: ✓ PyInstaller completed successfully
+[11:10:31] INFO: 
+[11:10:31] INFO: STEP: Verify Build
+[11:10:31] INFO: ----------------------------------------------------------------------
+[11:10:31] INFO: Verifying build output...
+[11:10:31] INFO: ✓ Executable found: dist\VoiceControl.exe
+[11:10:31] INFO: ✓ Size: 240.84 MB
+[11:10:37] WARNING: ✓ Executable responds (timeout expected)
+[11:10:37] SUCCESS: ✓ Build verification complete
+[11:10:37] INFO: ✓ Verification report written: dist\verification_report.txt
+[11:10:37] INFO: 
+[11:10:37] INFO: ======================================================================
+[11:10:37] SUCCESS: ✓ BUILD COMPLETED SUCCESSFULLY in 177.5s
+[11:10:37] INFO: ======================================================================
+[11:10:37] INFO: Output: dist\VoiceControl.exe
