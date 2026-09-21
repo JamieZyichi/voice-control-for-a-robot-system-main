@@ -47,7 +47,10 @@ BUILD_CONFIG = {
 
     # Optional features
     "require_admin": False,            # Request UAC admin if audio devices need it
-    "include_local_models": True,      # Bundle local_models/ if present
+    # Ship local_models/ next to the EXE as real files. Do not embed the
+    # Hugging Face cache in onefile: its snapshot symlinks cannot always be
+    # recreated by the PyInstaller bootloader on Windows.
+    "include_local_models": True,
     "include_onnxruntime": True,       # Include ONNX Runtime for VAD
     "discover_binaries": True          # Auto-discover DLLs (PortAudio/CT2/ONNX)
 }
@@ -69,7 +72,6 @@ class EnhancedVoiceControlBuilder:
         self.build_dir = Path(self.config["build_dir"])
         self.output_dir = Path(self.config["output_dir"])
         self.runtime_hooks_dir = Path(self.config["runtime_hooks_dir"])
-        
         # Build state
         self.start_time = None
         self.build_log = []
@@ -487,8 +489,9 @@ _setup_environment()
         for name in ("commands_hotwords.json", "tts_config.json", "NTU.PNG"):
             if Path(name).exists():
                 datas.append((name, '.'))
-        if self.config.get("include_local_models", True) and Path('local_models').exists():
-            datas.append(('local_models', 'local_models'))
+        # local_models is intentionally not added to the onefile archive.
+        # ModelManager already resolves it next to sys.executable, and keeping
+        # it external avoids boot-time symlink creation inside _MEIPASS.
         
         # CRITICAL: Include faster-whisper VAD assets (silero_vad_v6.onnx)
         try:
@@ -702,6 +705,38 @@ exe = EXE(
         self.log("✓ Build verification complete", "SUCCESS")
         return True
 
+    def copy_local_models(self) -> bool:
+        """Copy offline models next to the EXE, dereferencing cache symlinks."""
+        if not self.config.get("include_local_models", True):
+            self.log("Local model packaging disabled")
+            return True
+
+        source = Path("local_models")
+        destination = self.output_dir / "local_models"
+
+        if not source.is_dir():
+            self.log(
+                "Required local_models directory was not found; "
+                "offline package would be incomplete",
+                "ERROR"
+            )
+            return False
+
+        try:
+            # symlinks=False follows Hugging Face snapshot links and writes
+            # ordinary files, so the target PC needs no symlink permission.
+            shutil.copytree(
+                source,
+                destination,
+                symlinks=False,
+                dirs_exist_ok=True
+            )
+            self.log(f"✓ Offline models copied to: {destination}", "SUCCESS")
+            return True
+        except Exception as e:
+            self.log(f"Failed to copy offline models: {e}", "ERROR")
+            return False
+
     def generate_verification_report(self):
         """Write a simple verification report alongside the EXE."""
         try:
@@ -712,6 +747,9 @@ exe = EXE(
             lines.append(f"Windowed: {self.config.get('windowed', True)}")
             lines.append(f"Require Admin: {self.config.get('require_admin', False)}")
             lines.append(f"Include local_models: {self.config.get('include_local_models', True)}")
+            lines.append(
+                "Local models location: dist/local_models (external, symlinks dereferenced)"
+            )
             lines.append(f"Include ONNX Runtime: {self.config.get('include_onnxruntime', True)}")
             lines.append("")
             lines.append("Included files (if present):")
@@ -775,6 +813,15 @@ exe = EXE(
         self.log("-" * 70)
         if not self.run_pyinstaller(spec_file):
             self.log("✗ Build failed", "ERROR")
+            return False
+
+        # Keep models offline and portable without embedding Hugging Face
+        # cache symlinks in the onefile executable.
+        self.log("")
+        self.log("STEP: Copy Offline Models")
+        self.log("-" * 70)
+        if not self.copy_local_models():
+            self.log("✗ Offline model packaging failed", "ERROR")
             return False
         
         # Verify
