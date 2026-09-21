@@ -22,15 +22,31 @@ except ImportError:
     print("[INIT] Using standard AudioEngine")
     
 from model_manager import SUPPORTED_MODELS
-from ui_language import UILanguage, UIDialogs
 
 # ============================================================================
 # UI Configuration
 # ============================================================================
 
-from gui_theme import (
-    COLORS, FONTS, install_theme, BrandHeader, StatusPanel, ActivityText, button_icon,
-)
+COLORS = {
+    "bg": "#F8F9FA",
+    "bg_dark": "#2C3E50", 
+    "primary": "#4A90E2",
+    "success": "#50C878",
+    "danger": "#E74C3C",
+    "warning": "#FF9800",
+    "secondary": "#6C757D",
+    "light": "#F8F9FA",
+    "dark": "#343A40",
+    "border": "#DEE2E6",
+    "text": "#2C3E50"
+}
+
+FONTS = {
+    "title": ("Segoe UI", 16, "bold"),  # Increased by 2pt for importance
+    "body": ("Segoe UI", 11),  # Increased by 1pt
+    "small": ("Segoe UI", 10),  # Increased by 1pt
+    "mono": ("Consolas", 10)  # Increased by 1pt
+}
 
 # ============================================================================
 # System Health Monitor (New Component for Error Isolation)
@@ -100,8 +116,6 @@ class VoiceControlApp:
     
     def __init__(self, root):
         self.root = root
-        self.ui_language = UILanguage(root)
-        self.dialogs = UIDialogs(self.ui_language)
         self.root.title("Voice Control System")
         self.root.geometry("1000x750")
         self.root.configure(bg=COLORS["bg"])
@@ -165,69 +179,68 @@ class VoiceControlApp:
         
         print("[INIT] VoiceControlApp initialized")
     
-    def _setup_styles(self):
-        """Use the presentation module; native ttk controls retain their bindings."""
-        install_theme(self.root)
-
-    def _style_content(self, parent):
-        """Apply shared typography and borders to classic Tk content widgets."""
-        for widget in parent.winfo_children():
-            if isinstance(widget, tk.Label):
-                widget.configure(fg=COLORS["text"])
-            if isinstance(widget, tk.LabelFrame):
-                widget.configure(bg=COLORS["surface"], fg=COLORS["secondary"],
-                                 font=FONTS["section"], relief=tk.FLAT, bd=0,
-                                 padx=8, pady=8)
-            if isinstance(widget, (tk.Text, tk.Entry)) and not isinstance(widget, ttk.Widget):
-                widget.configure(bg=COLORS["surface"], fg=COLORS["text"],
-                                 insertbackground=COLORS["text"], relief=tk.FLAT,
-                                 bd=0, highlightthickness=1,
-                                 highlightbackground=COLORS["border"],
-                                 highlightcolor=COLORS["primary"],
-                                 selectbackground=COLORS["selection"],
-                                 selectforeground=COLORS["text"])
-                if isinstance(widget, tk.Text):
-                    widget.configure(padx=12, pady=10, spacing1=2, spacing3=2)
-            self._style_content(widget)
-
     def _build_ui(self):
-        """Build the reference layout around the original four native tabs."""
-        self._setup_styles()
-        self.status_var = self.ui_language.variable("Initializing...")
-        # Reuse the original logo loader and source artwork, never the AI mockup logo.
-        logo_holder = tk.Frame(self.root)
-        self._init_logo_static(logo_holder, 50)
-        self.header = BrandHeader(self.root, self.status_var, self.logo_photo,
-                                  translate=self.ui_language.text, on_language=self._toggle_ui_language)
-        self.header.pack(fill=tk.X, pady=(0, 12))
+        """Build the user interface"""
+        
+        # Header with logo (left), centered title (middle), status (right)
+        header = tk.Frame(self.root, bg=COLORS["primary"])  # dynamic height based on content
+        header.pack(fill=tk.X)
 
+        # Use a 3-column grid to keep the title centered regardless of logo/status width
+        header.grid_columnconfigure(0, weight=1)  # left spacer grows
+        header.grid_columnconfigure(1, weight=0)  # center content
+        header.grid_columnconfigure(2, weight=1)  # right spacer grows
+
+        left_area = tk.Frame(header, bg=COLORS["primary"])
+        center_area = tk.Frame(header, bg=COLORS["primary"])
+        right_area = tk.Frame(header, bg=COLORS["primary"])
+
+        left_area.grid(row=0, column=0, sticky="w", padx=10, pady=6)
+        center_area.grid(row=0, column=1, pady=6)
+        right_area.grid(row=0, column=2, sticky="e", padx=10, pady=6)
+
+        # Compute target logo height based on title font height (1.3x)
+        title_font = tkfont.Font(family="Segoe UI", size=18, weight="bold")
+        title_linespace = max(1, int(title_font.metrics("linespace")))
+        target_logo_h = max(12, int(title_linespace * 1.3))
+
+        # Initialize NTU logo with proportional scaling to target height
+        self._init_logo_static(left_area, target_logo_h)
+
+        # Title label (centered)
+        title_label = tk.Label(center_area, text="Voice Control System",
+                               font=title_font,
+                               bg=COLORS["primary"], fg="white")
+        title_label.pack()
+
+        # Status indicator (right side)
+        self.status_var = tk.StringVar(value="Initializing...")
+        status_label = tk.Label(right_area, textvariable=self.status_var,
+                                font=FONTS["body"], bg=COLORS["primary"], fg="white")
+        status_label.pack(anchor="e")
+        
+        # Main content with tabs
         notebook = ttk.Notebook(self.root)
-        notebook.pack(fill=tk.BOTH, expand=True, padx=22, pady=(0, 18))
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Create tabs
         self.tab_listen = tk.Frame(notebook, bg=COLORS["bg"])
         notebook.add(self.tab_listen, text="Listen")
+        
         self.tab_commands = tk.Frame(notebook, bg=COLORS["bg"])
         notebook.add(self.tab_commands, text="Commands")
+        
         self.tab_training = tk.Frame(notebook, bg=COLORS["bg"])
         notebook.add(self.tab_training, text="Training")
+        
         self.tab_system = tk.Frame(notebook, bg=COLORS["bg"])
         notebook.add(self.tab_system, text="System")
+        
+        # Build each tab
         self._build_listen_tab()
         self._build_commands_tab()
         self._build_training_tab()
         self._build_system_tab()
-        for tab in (self.tab_listen, self.tab_commands, self.tab_training, self.tab_system):
-            self._style_content(tab)
-        # The inset owns the rounded border; preserve the original Text behavior.
-        self.result_text.configure(highlightthickness=0, padx=8, pady=4)
-        self.result_text.frame.configure(bg=COLORS["surface"])
-        self.result_text.vbar.configure(bg="#CFD6E1", troughcolor="#F6F8FC",
-                                       activebackground="#AEBACD", relief=tk.FLAT,
-                                       bd=0, width=10, highlightthickness=0)
-        self.ui_language.register_tree(self.root)
-
-    def _toggle_ui_language(self):
-        """Change presentation in place without touching the engine or log text."""
-        self.ui_language.toggle()
 
     def _init_logo(self, header: tk.Frame, left_area: tk.Frame):
         """Load the NTU logo and bind height-based scaling to the header size."""
@@ -258,7 +271,7 @@ class VoiceControlApp:
 
         # Create label now; actual sizing will occur on first <Configure>
         if self.logo_label is None:
-            self.logo_label = tk.Label(left_area, bg=COLORS["surface"])
+            self.logo_label = tk.Label(left_area, bg=COLORS["primary"])
             self.logo_label.pack(anchor="w")
 
         # Bind to header size changes for dynamic height-based scaling
@@ -359,90 +372,98 @@ class VoiceControlApp:
 
         # Create or update label
         if self.logo_label is None:
-            self.logo_label = tk.Label(left_area, image=self.logo_photo, bg=COLORS["surface"])
+            self.logo_label = tk.Label(left_area, image=self.logo_photo, bg=COLORS["primary"])
             self.logo_label.pack(anchor="w")
         else:
             self.logo_label.configure(image=self.logo_photo)
     
     def _build_listen_tab(self):
-        """Reference composition: rounded recognition card above the log card."""
-        recognition = ttk.Frame(self.tab_listen, style="Card.TFrame", padding=(22, 16))
-        recognition.pack(fill=tk.X, pady=(0, 14))
-        tk.Label(recognition, text="Voice Recognition", font=FONTS["title"],
-                 bg=COLORS["surface"], fg=COLORS["text"]).pack(anchor="w", pady=(0, 14))
-
-        self.detailed_status_var = self.ui_language.variable("System starting up...")
-        status_frame = StatusPanel(recognition, self.detailed_status_var,
-                                   translate=self.ui_language.text)
-        status_frame.pack(fill=tk.X)
-
-        btn_frame = tk.Frame(recognition, bg=COLORS["surface"])
-        btn_frame.pack(pady=(18, 2))
-        self._mic_icon = button_icon(self.root, "mic", "#FFFFFF")
-        self._mic_disabled_icon = button_icon(self.root, "mic", "#98A3B6")
-        self._stop_icon = button_icon(self.root, "stop", COLORS["danger"])
-        self._stop_disabled_icon = button_icon(self.root, "stop", "#98A3B6")
-        self.btn_start = ttk.Button(btn_frame, text="Start Listening",
-                                   style="Start.TButton", width=16,
-                                   image=(self._mic_icon, "disabled", self._mic_disabled_icon),
-                                   compound=tk.LEFT,
-                                   command=self._start_listening,
-                                   state=tk.DISABLED, cursor="hand2")
-        self.btn_start.pack(side=tk.LEFT, padx=(0, 16))
-        self.btn_stop = ttk.Button(btn_frame, text="Stop Listening",
-                                  style="Stop.Danger.TButton", width=16,
-                                  image=(self._stop_icon, "disabled", self._stop_disabled_icon),
-                                  compound=tk.LEFT,
-                                  command=self._stop_listening,
-                                  state=tk.DISABLED, cursor="hand2")
-        self.btn_stop.pack(side=tk.LEFT)
-
-        result_frame = ttk.Frame(self.tab_listen, style="Card.TFrame", padding=(22, 14))
-        result_frame.pack(fill=tk.BOTH, expand=True)
-        log_header = tk.Frame(result_frame, bg=COLORS["surface"])
-        log_header.pack(fill=tk.X, pady=(0, 10))
-        tk.Label(log_header, text="Activity Log", font=FONTS["section"],
-                 fg=COLORS["text"], bg=COLORS["surface"]).pack(side=tk.LEFT)
-        # Construct the log before its Clear callback, retaining the original order.
-        inset = ttk.Frame(result_frame, style="Inset.TFrame", padding=8)
-        inset.pack(fill=tk.BOTH, expand=True)
-        self.result_text = ActivityText(inset, font=FONTS["mono"],
-                                       bg=COLORS["surface"], height=4, wrap=tk.WORD)
-        self.result_text.pack(fill=tk.BOTH, expand=True)
-        clear_btn = ttk.Button(log_header, text="Clear Log", style="Secondary.TButton",
-                               command=lambda: self.result_text.delete("1.0", tk.END))
-        clear_btn.pack(side=tk.RIGHT)
-
+        """Build the listening/recognition tab"""
+        
+        # Title
+        tk.Label(self.tab_listen, text="Voice Recognition",
+                font=("Segoe UI", 18, "bold"), bg=COLORS["bg"]).pack(pady=15)
+        
+        # Status display
+        status_frame = tk.Frame(self.tab_listen, bg=COLORS["bg_dark"], relief=tk.RAISED, bd=2)
+        status_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        self.detailed_status_var = tk.StringVar(value="System starting up...")
+        status_label = tk.Label(status_frame, textvariable=self.detailed_status_var,
+                               font=("Segoe UI", 12), bg=COLORS["bg_dark"], fg="white",
+                               justify=tk.LEFT, wraplength=700, pady=15, padx=15)
+        status_label.pack(fill=tk.X)
+        
+        # Control buttons
+        btn_frame = tk.Frame(self.tab_listen, bg=COLORS["bg"])
+        btn_frame.pack(pady=20)
+        
+        self.btn_start = tk.Button(btn_frame, text="Start Listening",
+                                  font=("Segoe UI", 13, "bold"),
+                                  bg=COLORS["success"], fg="white",
+                                  width=15, height=2,
+                                  command=self._start_listening,
+                                  state=tk.DISABLED,
+                                  relief=tk.FLAT, bd=0, cursor="hand2")
+        self.btn_start.pack(side=tk.LEFT, padx=10)
+        
+        self.btn_stop = tk.Button(btn_frame, text="Stop Listening",
+                                 font=("Segoe UI", 13, "bold"),
+                                 bg=COLORS["danger"], fg="white",
+                                 width=15, height=2,
+                                 command=self._stop_listening,
+                                 state=tk.DISABLED,
+                                 relief=tk.FLAT, bd=0, cursor="hand2")
+        self.btn_stop.pack(side=tk.LEFT, padx=10)
+        
+        # Results area
+        result_frame = tk.LabelFrame(self.tab_listen, text="Activity Log",
+                                    font=FONTS["body"], bg=COLORS["bg"])
+        result_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        self.result_text = scrolledtext.ScrolledText(result_frame,
+                                                    font=FONTS["mono"],
+                                                    bg="white", height=15,
+                                                    wrap=tk.WORD)
+        self.result_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Clear button
+        clear_btn = tk.Button(result_frame, text="Clear Log",
+                             bg=COLORS["secondary"], fg="white",
+                             relief=tk.FLAT, bd=0,
+                             command=lambda: self.result_text.delete("1.0", tk.END))
+        clear_btn.pack(pady=5)
+    
     def _build_commands_tab(self):
         """Build the commands management tab"""
         
-        page = ttk.Frame(self.tab_commands, style="Card.TFrame", padding=(20, 14))
-        page.pack(fill=tk.BOTH, expand=True)
-        tk.Label(page, text="Command Management",
-                font=FONTS["title"], bg=COLORS["surface"]).pack(anchor="w", padx=20, pady=(0, 16))
+        tk.Label(self.tab_commands, text="Command Management",
+                font=("Segoe UI", 18, "bold"), bg=COLORS["bg"]).pack(pady=15)
         
         # Add command section
-        add_frame = tk.Frame(page, bg=COLORS["surface"])
-        add_frame.pack(fill=tk.X, padx=20, pady=(0, 12))
+        add_frame = tk.Frame(self.tab_commands, bg=COLORS["bg"])
+        add_frame.pack(pady=10)
         
         tk.Label(add_frame, text="New Command:",
-                font=FONTS["body"], bg=COLORS["surface"]).pack(side=tk.LEFT, padx=5)
+                font=FONTS["body"], bg=COLORS["bg"]).pack(side=tk.LEFT, padx=5)
         
         self.cmd_entry = tk.Entry(add_frame, font=FONTS["body"], width=30)
         self.cmd_entry.pack(side=tk.LEFT, padx=5)
         self.cmd_entry.bind("<Return>", lambda e: self._add_command())
         
-        ttk.Button(add_frame, text="Add Command", style="Primary.TButton",
+        tk.Button(add_frame, text="Add Command",
+                 bg=COLORS["success"], fg="white",
+                 relief=tk.FLAT, bd=0,
                  command=self._add_command).pack(side=tk.LEFT, padx=5)
         
         # Commands list
-        list_frame = tk.LabelFrame(page, text="Commands",
-                                  font=FONTS["body"], bg=COLORS["surface"])
+        list_frame = tk.LabelFrame(self.tab_commands, text="Commands",
+                                  font=FONTS["body"], bg=COLORS["bg"])
         list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         # Treeview for commands
         self.cmd_tree = ttk.Treeview(list_frame, columns=("Command", "Weight", "Usage"), 
-                                    show="headings", height=8)
+                                    show="headings", height=15)
         self.cmd_tree.heading("Command", text="Command")
         self.cmd_tree.heading("Weight", text="Weight")
         self.cmd_tree.heading("Usage", text="Usage Count")
@@ -454,34 +475,38 @@ class VoiceControlApp:
         self.cmd_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
         # Command buttons
-        cmd_btn_frame = tk.Frame(list_frame, bg=COLORS["surface"])
-        cmd_btn_frame.pack(side=tk.BOTTOM, pady=5, before=self.cmd_tree)
+        cmd_btn_frame = tk.Frame(list_frame, bg=COLORS["bg"])
+        cmd_btn_frame.pack(pady=5)
         
-        ttk.Button(cmd_btn_frame, text="Refresh", style="Secondary.TButton",
+        tk.Button(cmd_btn_frame, text="Refresh",
+                 bg=COLORS["primary"], fg="white",
+                 relief=tk.FLAT, bd=0,
                  command=self._refresh_commands).pack(side=tk.LEFT, padx=5)
         
-        ttk.Button(cmd_btn_frame, text="Delete Selected", style="Danger.TButton",
+        tk.Button(cmd_btn_frame, text="Delete Selected",
+                 bg=COLORS["danger"], fg="white",
+                 relief=tk.FLAT, bd=0,
                  command=self._delete_command).pack(side=tk.LEFT, padx=5)
         
-        ttk.Button(cmd_btn_frame, text="Reload JSON", style="Secondary.TButton",
+        tk.Button(cmd_btn_frame, text="Reload JSON",
+                 bg=COLORS["warning"], fg="white",
+                 relief=tk.FLAT, bd=0,
                  command=self._reload_commands_json).pack(side=tk.LEFT, padx=5)
     
     def _build_training_tab(self):
         """Build the training tab"""
         
-        page = ttk.Frame(self.tab_training, style="Card.TFrame", padding=(20, 14))
-        page.pack(fill=tk.BOTH, expand=True)
-        tk.Label(page, text="Command Training",
-                font=FONTS["title"], bg=COLORS["surface"]).pack(anchor="w", padx=20, pady=(0, 16))
+        tk.Label(self.tab_training, text="Command Training",
+                font=("Segoe UI", 18, "bold"), bg=COLORS["bg"]).pack(pady=15)
         
         # Training list
-        train_frame = tk.LabelFrame(page, text="Training Progress",
-                                   font=FONTS["body"], bg=COLORS["surface"])
+        train_frame = tk.LabelFrame(self.tab_training, text="Training Progress",
+                                   font=FONTS["body"], bg=COLORS["bg"])
         train_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         self.train_tree = ttk.Treeview(train_frame,
                                       columns=("Command", "Count", "Weight"),
-                                      show="headings", height=8)
+                                      show="headings", height=15)
         self.train_tree.heading("Command", text="Command")
         self.train_tree.heading("Count", text="Usage Count")
         self.train_tree.heading("Weight", text="Weight")
@@ -493,25 +518,27 @@ class VoiceControlApp:
         self.train_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
         # Training buttons
-        train_btn_frame = tk.Frame(train_frame, bg=COLORS["surface"])
-        train_btn_frame.pack(side=tk.BOTTOM, pady=10, before=self.train_tree)
+        train_btn_frame = tk.Frame(train_frame, bg=COLORS["bg"])
+        train_btn_frame.pack(pady=10)
         
-        ttk.Button(train_btn_frame, text="Refresh", style="Secondary.TButton",
+        tk.Button(train_btn_frame, text="Refresh",
+                 bg=COLORS["primary"], fg="white",
+                 relief=tk.FLAT, bd=0,
                  command=self._refresh_training).pack(side=tk.LEFT, padx=5)
         
-        ttk.Button(train_btn_frame, text="Train Selected", style="Primary.TButton",
+        tk.Button(train_btn_frame, text="Train Selected",
+                 bg=COLORS["warning"], fg="white",
+                 relief=tk.FLAT, bd=0,
                  command=self._train_command).pack(side=tk.LEFT, padx=5)
     
     def _build_system_tab(self):
         """Build the system monitoring tab"""
         
-        page = ttk.Frame(self.tab_system, style="Card.TFrame", padding=(20, 14))
-        page.pack(fill=tk.BOTH, expand=True)
-        tk.Label(page, text="System Configuration",
-                font=FONTS["title"], bg=COLORS["surface"]).pack(anchor="w", padx=20, pady=(0, 16))
+        tk.Label(self.tab_system, text="System Configuration",
+                font=("Segoe UI", 18, "bold"), bg=COLORS["bg"]).pack(pady=15)
         
         # Configuration panel
-        config_frame = tk.Frame(page, bg=COLORS["surface"], relief=tk.FLAT, bd=0)
+        config_frame = tk.Frame(self.tab_system, bg="white", relief=tk.RAISED, bd=1)
         config_frame.pack(fill=tk.X, padx=20, pady=10)
         
         config_inner = tk.Frame(config_frame, bg="white")
@@ -535,31 +562,37 @@ class VoiceControlApp:
         self.voice_combo.bind("<<ComboboxSelected>>", self._on_voice_change)
         
         # Preview button
-        ttk.Button(config_inner, text="Test Voice", style="Secondary.TButton",
-                   command=self._test_voice).grid(row=1, column=2, padx=(15, 0), pady=(5, 0))
+        tk.Button(config_inner, text="Test Voice", bg=COLORS["secondary"], fg="white",
+                 relief=tk.FLAT, bd=0, command=self._test_voice).grid(row=1, column=2, padx=(15, 0), pady=(5, 0))
         
         # System status
-        status_frame = tk.LabelFrame(page, text="System Status",
-                                    font=FONTS["body"], bg=COLORS["surface"])
+        status_frame = tk.LabelFrame(self.tab_system, text="System Status",
+                                    font=FONTS["body"], bg=COLORS["bg"])
         status_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         self.system_text = tk.Text(status_frame,
                                   font=FONTS["mono"],
-                                  height=8, state=tk.DISABLED,
+                                  height=20, state=tk.DISABLED,
                                   bg="white")
         self.system_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
         # System buttons
-        sys_btn_frame = tk.Frame(status_frame, bg=COLORS["surface"])
-        sys_btn_frame.pack(side=tk.BOTTOM, pady=10, before=self.system_text)
+        sys_btn_frame = tk.Frame(status_frame, bg=COLORS["bg"])
+        sys_btn_frame.pack(pady=10)
         
-        ttk.Button(sys_btn_frame, text="Refresh Status", style="Secondary.TButton",
+        tk.Button(sys_btn_frame, text="Refresh Status",
+                 bg=COLORS["primary"], fg="white",
+                 relief=tk.FLAT, bd=0,
                  command=self._refresh_system_status).pack(side=tk.LEFT, padx=5)
         
-        ttk.Button(sys_btn_frame, text="Health Check", style="Secondary.TButton",
+        tk.Button(sys_btn_frame, text="Health Check",
+                 bg=COLORS["success"], fg="white",
+                 relief=tk.FLAT, bd=0,
                  command=self._show_health_report).pack(side=tk.LEFT, padx=5)
         
-        ttk.Button(sys_btn_frame, text="Save Log", style="Secondary.TButton",
+        tk.Button(sys_btn_frame, text="Save Log",
+                 bg=COLORS["secondary"], fg="white",
+                 relief=tk.FLAT, bd=0,
                  command=self._save_log).pack(side=tk.LEFT, padx=5)
     
     # ========================================================================
@@ -772,7 +805,7 @@ class VoiceControlApp:
     def _reload_commands_json(self):
         """Manually reload the JSON command file"""
         if not self.audio_engine or not hasattr(self.audio_engine, 'cmd_hotword_mgr'):
-            self.dialogs.showerror("Error", "Command manager not available")
+            messagebox.showerror("Error", "Command manager not available")
             return
         
         try:
@@ -781,11 +814,11 @@ class VoiceControlApp:
             self._refresh_commands()
             self._refresh_training()
             self._log("[SUCCESS] Commands reloaded from JSON")
-            self.dialogs.showinfo("Success", "Commands reloaded from JSON file")
+            messagebox.showinfo("Success", "Commands reloaded from JSON file")
         except Exception as e:
             error_msg = f"Failed to reload JSON: {e}"
             self._log(f"[ERROR] {error_msg}")
-            self.dialogs.showerror("Error", error_msg)
+            messagebox.showerror("Error", error_msg)
     
     # ========================================================================
     # Control Population
@@ -825,7 +858,7 @@ class VoiceControlApp:
             return
         
         if not self.system_ready:
-            self.dialogs.showwarning("System Not Ready", 
+            messagebox.showwarning("System Not Ready", 
                                  "System is not fully initialized. Please wait.")
             return
         
@@ -1104,21 +1137,21 @@ class VoiceControlApp:
             self._refresh_commands()
             self._refresh_training()
             self._log(f"[SUCCESS] Command added: '{command}'")
-            self.dialogs.showinfo("Success", f"Command '{command}' added")
+            messagebox.showinfo("Success", f"Command '{command}' added")
         else:
-            self.dialogs.showerror("Error", f"Failed to add command '{command}'")
+            messagebox.showerror("Error", f"Failed to add command '{command}'")
     
     def _delete_command(self):
         """Delete selected command"""
         selection = self.cmd_tree.selection()
         if not selection:
-            self.dialogs.showwarning("No Selection", "Please select a command to delete.")
+            messagebox.showwarning("No Selection", "Please select a command to delete.")
             return
         
         item = self.cmd_tree.item(selection[0])
         command = item["values"][0]
         
-        if self.dialogs.askyesno("Confirm", f"Delete command '{command}'?"):
+        if messagebox.askyesno("Confirm", f"Delete command '{command}'?"):
             if self.audio_engine and self.audio_engine.remove_command(command):
                 self._refresh_commands()
                 self._refresh_training()
@@ -1151,7 +1184,7 @@ class VoiceControlApp:
         """Train selected command"""
         selection = self.train_tree.selection()
         if not selection:
-            self.dialogs.showwarning("No Selection", "Please select a command to train.")
+            messagebox.showwarning("No Selection", "Please select a command to train.")
             return
         
         item = self.train_tree.item(selection[0])
@@ -1161,7 +1194,7 @@ class VoiceControlApp:
             new_weight = self.audio_engine.train_command(command)
             self._refresh_training()
             self._log(f"[INFO] Command trained: '{command}' -> weight: {new_weight:.2f}")
-            self.dialogs.showinfo("Training", f"Command '{command}' trained. Weight: {new_weight:.2f}")
+            messagebox.showinfo("Training", f"Command '{command}' trained. Weight: {new_weight:.2f}")
     
     def _refresh_training(self):
         """Refresh training data"""
@@ -1233,7 +1266,7 @@ class VoiceControlApp:
         # Update display
         self.system_text.config(state=tk.NORMAL)
         self.system_text.delete("1.0", tk.END)
-        self.ui_language.set_text(self.system_text, status_text)
+        self.system_text.insert("1.0", status_text)
         self.system_text.config(state=tk.DISABLED)
     
     def _show_health_report(self):
@@ -1254,14 +1287,13 @@ class VoiceControlApp:
         # Report text
         report_text = tk.Text(popup, font=FONTS["mono"], wrap=tk.WORD)
         report_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.ui_language.set_text(report_text, report)
+        report_text.insert("1.0", report)
         report_text.config(state=tk.DISABLED)
         
         # Close button
-        ttk.Button(popup, text="Close", command=popup.destroy,
-                   style="Primary.TButton").pack(pady=10)
-        self._style_content(popup)
-        self.ui_language.register_tree(popup)
+        tk.Button(popup, text="Close", command=popup.destroy,
+                 bg=COLORS["primary"], fg="white",
+                 relief=tk.FLAT, bd=0).pack(pady=10)
     
     def _save_log(self):
         """Save activity log"""
@@ -1273,10 +1305,10 @@ class VoiceControlApp:
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(log_content)
             
-            self.dialogs.showinfo("Success", f"Log saved as {filename}")
+            messagebox.showinfo("Success", f"Log saved as {filename}")
             self._log(f"[INFO] Log saved: {filename}")
         except Exception as e:
-            self.dialogs.showerror("Error", f"Failed to save log: {e}")
+            messagebox.showerror("Error", f"Failed to save log: {e}")
     
     # ========================================================================
     # UI Helpers
