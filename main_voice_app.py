@@ -83,7 +83,7 @@ class SystemHealthMonitor:
             status = info["status"].upper()
             report += f"{component}: {status}\n"
             if info["error"]:
-                report += f"  Error: {info["error"]}\n"
+                report += f"  Error: {info['error']}\n"
         
         failed = self.get_failed_components()
         if failed:
